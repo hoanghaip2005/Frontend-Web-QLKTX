@@ -1,33 +1,175 @@
-# QLKTX Web Frontend Rules
+# QLKTX Web Frontend Agent Rules
 
-## Current phase
+## Mission
 
-- Build UI only with React, TypeScript, Vite, Tailwind CSS and mock data.
-- Do not add Supabase, API clients, backend adapters, database migrations or real auth in this phase.
-- Keep backend assumptions in docs or mock data, not inside screen code.
+Build the `Frontend-Web-QLKTX` React web frontend for DormCare Hub / QLKTX. This repo is the team workspace for the web-responsive MVP UI. The current phase is frontend-only: build navigable, realistic, demo-ready screens with mock data so 7 members can work in parallel with low merge conflict.
 
-## Architecture boundary
+Primary source docs:
 
-- Screens live in `src/features/<role>/<feature>`.
-- Shared primitives live in `src/components/ui` and are owned by Member 1.
-- Cross-feature components live in `src/components/common` only after they are reused by at least two features.
-- Navigation, route maps, layouts and providers live in `src/app` and are owned by Member 1.
-- Mock data lives in `src/mocks/data`; screens may read mock data but must not call network services.
+- `docs/pm/project-overview.md`
+- `docs/pm/product-backlog.md`
+- `docs/pm/prototype-spec.md`
+- `docs/pm/definition-of-done.md`
+- `docs/pm/release-plan-fixed-date.md`
+- Local web docs in `docs/`
 
-## Team ownership
+For feature members, local docs in this repo are the daily working contract. The `docs/pm/` folder is a local snapshot copied from `D:\NGONGOCDANGKHOA\docs`, so members do not need that external repo. Member 1/PM or agents use the external folder only to refresh the snapshot or resolve upstream contradictions.
 
-- Member 1: `src/app`, `src/components`, `src/config`, `src/lib`, `src/styles`, docs, root config and dependencies.
-- Member 2: `src/features/auth`.
-- Member 3: `src/features/student/dashboard`, `src/features/student/application`, `src/features/student/room`.
-- Member 4: `src/features/student/tickets`, `src/features/student/invoices`, `src/features/student/requests`, `src/features/student/notifications`.
-- Member 5: `src/features/staff/dashboard`, `src/features/staff/applications`, `src/features/staff/allocation`, `src/features/staff/checkin_checkout`.
-- Member 6: `src/features/staff/residents`, `src/features/staff/maintenance`, `src/features/staff/billing`, `src/features/staff/tasks`.
-- Member 7: `src/features/admin`.
+## Non-Negotiables
 
-## Merge rules
+- Do not add Supabase, backend API clients, real auth, storage, payment, SIS sync, database migrations, service keys, or real env secrets in this phase.
+- Screens may use mock data from `src/mocks/data` and local component state only.
+- UI primitives must come from `shadcn` components in `src/components/ui`.
+- Icons must come from `lucide-react`. Do not add another icon pack. Do not hand-roll SVG icons unless no lucide icon fits.
+- Shared UI, route maps, root config, dependency changes, docs, and `src/components/ui` are Member 1 owned.
+- Feature members only edit their assigned feature folders unless a shared change is explicitly coordinated.
+- Every screen must be responsive, keyboard usable, and include realistic loading/empty/error/form states when relevant.
 
-- Do not edit another member's feature folder without agreement.
-- Do not add dependencies without Member 1 updating `package.json`.
-- Do not edit route constants casually. Ask Member 1 to add new top-level routes.
-- Keep one PR limited to one ownership area unless it is the base scaffold PR.
-- Run `npm run typecheck`, `npm run lint` and `npm run build` before merge.
+## Stack
+
+- Vite + React + TypeScript
+- React Router
+- Tailwind CSS
+- shadcn component registry, style `radix-nova`, icon library `lucide`
+- `lucide-react` for icons
+- `class-variance-authority`, `radix-ui`, `clsx`, `tailwind-merge` for shadcn primitives
+
+## Commands
+
+```bash
+npm install
+npm run dev
+npm run typecheck
+npm run lint
+npm run build
+npm run format
+```
+
+Local shadcn CLI is installed as a dev dependency because `npx shadcn@latest` can fail on this Windows toolchain. Use:
+
+```bash
+node ./node_modules/shadcn/dist/index.js info
+node ./node_modules/shadcn/dist/index.js add <component> --yes
+```
+
+Only Member 1 should add or overwrite shared shadcn components.
+
+## Installed shadcn Components
+
+Current installed base:
+
+- `button`
+- `card`
+- `badge`
+- `input`
+- `table`
+- `tabs`
+- `dialog`
+- `sheet`
+- `dropdown-menu`
+- `select`
+- `checkbox`
+- `textarea`
+- `skeleton`
+- `separator`
+- `avatar`
+- `progress`
+- `alert`
+
+Keep legacy local primitives only when they are project-specific wrappers, for example `EmptyState`, `LoadingState`, or `Modal`. Prefer shadcn `Dialog` for new modal work.
+
+## Architecture Boundaries
+
+```text
+src/
+  app/             router, providers, layouts
+  components/ui    shadcn primitives, Member 1 only
+  components/common reusable components used by 2+ features
+  components/navigation app sidebar/nav
+  config           app constants
+  features         role-owned screens and feature-only components
+  lib              pure helpers, e.g. cn()
+  mocks/data       mock-only data source
+  styles           Tailwind entry and global tokens
+  types            shared TypeScript types
+```
+
+Data boundary for this phase:
+
+```text
+screen -> mock data/local state -> UI
+```
+
+Future backend phase boundary:
+
+```text
+screen -> feature hooks/state -> repositories -> datasource -> Supabase/API
+```
+
+Do not pre-build the future datasource layer during frontend-only work.
+
+## Member Ownership
+
+| Member | Owns                                                                                                                                      | Main scope                                                                   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 1      | `src/app`, `src/components`, `src/config`, `src/lib`, `src/styles`, root config, docs                                                     | Shell, router, shadcn UI system, dependencies, rules                         |
+| 2      | `src/features/auth`                                                                                                                       | Login, profile, role gate mock, consent/RBAC UI                              |
+| 3      | `src/features/student/dashboard`, `src/features/student/application`, `src/features/student/room`                                         | Student home, application, current room                                      |
+| 4      | `src/features/student/tickets`, `src/features/student/invoices`, `src/features/student/requests`, `src/features/student/notifications`    | Student services                                                             |
+| 5      | `src/features/staff/dashboard`, `src/features/staff/applications`, `src/features/staff/allocation`, `src/features/staff/checkin_checkout` | Staff operations A                                                           |
+| 6      | `src/features/staff/residents`, `src/features/staff/maintenance`, `src/features/staff/billing`, `src/features/staff/tasks`                | Staff operations B                                                           |
+| 7      | `src/features/admin`                                                                                                                      | Admin dashboard, RBAC/users, buildings/rooms, rules, reports/audit, settings |
+
+## UI Rules
+
+- Use operational SaaS density. No marketing landing page, decorative hero, oversized gradients, or generic card grids.
+- Use real DormCare sample copy: applications, rooms, beds, tickets, SLA, occupancy, assignment reasons.
+- Use shadcn semantic APIs: `Button`, `Card`, `Badge`, `Table`, `Tabs`, `Dialog`, `Select`, `Checkbox`, etc.
+- Use lucide icons inside icon buttons and nav items. Add `aria-hidden="true"` for decorative icons.
+- Use labels for icon-only buttons through `aria-label` or visible text.
+- Keep cards at `8px` radius or the shadcn token equivalent; do not nest cards inside cards.
+- Keep tables scan-friendly: compact rows, status badges, row actions, horizontal overflow on mobile.
+- Every KPI must point to a record list or action, not just a decorative chart.
+- Every override or sensitive operation in mock UI must show a reason/audit hint.
+
+## Feature Page Done Checklist
+
+- Route renders a non-blank page.
+- Uses the shared layout/navigation.
+- Uses shadcn UI primitives and lucide icons.
+- Uses mock data from `src/mocks/data` or local constants inside the feature.
+- Shows default state and relevant loading, empty, error, validation, and mobile states.
+- Does not import Supabase, call `fetch` to a real API, or introduce secrets.
+- Matches MVP backlog/prototype intent in `docs/pm/` and local web docs.
+- Passes `npm run typecheck`, `npm run lint`, and `npm run build`.
+
+## Dependency Rules
+
+- New dependency requires Member 1 approval and docs update.
+- No UI libraries that compete with shadcn.
+- No icon libraries other than `lucide-react`.
+- No state-management library unless a concrete cross-feature need appears.
+- No data-fetching library until backend integration begins.
+
+## Merge Rules
+
+- One PR should stay inside one ownership area.
+- Shared UI changes should be their own PR or coordinated with Member 1.
+- Do not rename routes, folders, or role paths without docs/router update.
+- Do not edit another member's feature folder to make your page compile. Ask for a shared fix or move shared code to `src/components/common`.
+- Before handoff, list changed files, commands run, and any warning left.
+
+## Current MVP Guardrail
+
+Protect Release 1 MVP from scope creep. Must-have flow:
+
+1. Login/RBAC/consent.
+2. Student application and status.
+3. Staff application review.
+4. Room/bed ledger.
+5. Assignment suggestion and override reason.
+6. Check-in/out.
+7. Maintenance ticket and SLA board.
+8. Operations dashboard with actionable KPIs.
+
+Phase 2 items such as fees/debt, notifications, import/export, audit export, SIS sync, payment gateway, and native mobile are not part of the active frontend-only MVP unless the team explicitly moves them in.

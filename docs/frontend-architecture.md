@@ -2,22 +2,59 @@
 
 ## Mục tiêu
 
-Repo `Frontend-Web-QLKTX` là web frontend React cho DormCare Hub / QLKTX. Giai đoạn hiện tại chỉ dựng UI để 7 thành viên làm song song. Backend, Supabase, real auth và API adapter chưa được triển khai.
+`Frontend-Web-QLKTX` là web frontend React cho DormCare Hub / QLKTX. Giai đoạn hiện tại chỉ dựng UI web-responsive để nhóm 7 người làm song song và demo MVP bằng mock data. Backend, Supabase, real auth, payment gateway, SIS sync và native mobile chưa triển khai trong repo này.
 
-Nguồn tham chiếu kiến trúc đến từ `D:\QLKTX\Frontend-QLKTX\docs` và skeleton Flutter hiện có. Phần React giữ cùng ý tưởng role-based feature ownership, nhưng đổi sang cấu trúc web frontend.
+Architecture này đồng bộ với bộ tài liệu kỹ thuật/project-management đã copy vào `docs/pm/` từ nguồn gốc `D:\NGONGOCDANGKHOA\docs`, đặc biệt:
+
+- `docs/pm/project-overview.md`: MVP boundary, role/stakeholder, risks.
+- `docs/pm/product-backlog.md`: user stories, priorities, sprint targets.
+- `docs/pm/prototype-spec.md`: screen list, flow, sample data, acceptance criteria.
+- `docs/pm/definition-of-done.md`: quality/evidence checklist.
+- `docs/pm/release-plan-fixed-date.md`: fixed-date Release 1 guardrail.
+
+Các file trên là bản snapshot local để members không cần clone hoặc mở repo `D:\NGONGOCDANGKHOA`. Trong công việc hằng ngày, feature members đọc docs local trong repo này, đặc biệt `docs/frontend-architecture.md`, `docs/team-work-rules.md`, và file liên quan trong `docs/pm/` khi cần acceptance criteria. Member 1/PM chịu trách nhiệm refresh snapshot từ upstream khi scope thay đổi hoặc có mâu thuẫn.
 
 ## Stack
 
-| Layer | Quyết định |
-| --- | --- |
-| App framework | Vite + React + TypeScript |
-| Routing | `react-router-dom` |
-| Styling | Tailwind CSS |
-| Icons | `lucide-react` |
-| Utility class merge | `clsx`, `tailwind-merge` |
-| Backend phase | Mock-only, chưa dùng Supabase |
+| Layer               | Quyết định                                                                 |
+| ------------------- | -------------------------------------------------------------------------- |
+| App framework       | Vite + React + TypeScript                                                  |
+| Routing             | `react-router-dom`                                                         |
+| Styling             | Tailwind CSS                                                               |
+| UI primitives       | shadcn components in `src/components/ui`                                   |
+| shadcn config       | `components.json`, style `radix-nova`, base `radix`, icon library `lucide` |
+| Icons               | `lucide-react` only                                                        |
+| Utility class merge | `clsx`, `tailwind-merge`, `class-variance-authority`                       |
+| Headless primitives | `radix-ui`                                                                 |
+| Backend phase       | Mock-only, no Supabase/API client                                          |
 
-## Cấu trúc thư mục
+## shadcn Setup
+
+The project uses a local shadcn CLI dev dependency because `npx shadcn@latest` can fail on the current Windows toolchain.
+
+```bash
+node ./node_modules/shadcn/dist/index.js info
+node ./node_modules/shadcn/dist/index.js add <component> --yes
+```
+
+Installed base components:
+
+```text
+button, card, badge, input, table, tabs, dialog, sheet,
+dropdown-menu, select, checkbox, textarea, skeleton,
+separator, avatar, progress, alert
+```
+
+Support files:
+
+- `components.json`: shadcn registry/alias config.
+- `tsconfig.json` and `tsconfig.app.json`: both expose `@/* -> src/*` so CLI and app agree.
+- `src/lib/utils.ts`: compatibility export for shadcn imports from `@/lib/utils`.
+- `src/lib/utils/cn.ts`: actual `cn()` helper.
+- `tailwind.config.ts`: semantic shadcn tokens + existing DormCare brand tokens.
+- `src/styles/index.css`: CSS variables for shadcn semantic colors.
+
+## Folder Structure
 
 ```text
 src/
@@ -26,8 +63,8 @@ src/
     providers/    # app-level providers
     layouts/      # role shell layouts
   components/
-    ui/           # primitive UI: Button, Card, Input, Badge, Table, Modal, Tabs
-    common/       # component dùng lại bởi 2+ feature
+    ui/           # shadcn primitives, Member 1 owned
+    common/       # component reused by 2+ features
     navigation/   # sidebar/nav components
   config/         # app constants
   features/
@@ -36,73 +73,124 @@ src/
     staff/        # staff operations modules
     admin/        # admin governance modules
   lib/
-    utils/        # pure helpers
+    utils/        # helper implementation files
+    utils.ts      # shadcn-compatible export
   mocks/
     data/         # mock data for UI only
   styles/         # Tailwind entry and global CSS
   types/          # shared TS types
 ```
 
-## Data boundary hiện tại
+## Data Boundary Hiện Tại
 
-Trong phase frontend-only:
+Frontend-only phase:
 
-- Screen dùng mock data hoặc local state.
-- Không gọi Supabase, REST API, RPC, storage hoặc auth thật.
-- Không để SQL/table policy logic trong component.
-- Không thêm `@supabase/supabase-js` cho tới phase backend integration.
+```text
+screens -> mock data/local state -> UI
+```
 
-Khi backend được mở sau này, data flow bắt buộc là:
+Rules:
+
+- Screens use mock data or local state.
+- No Supabase, REST API, RPC, storage, payment, SIS, or real auth calls.
+- No SQL/table policy logic in components.
+- No `@supabase/supabase-js` until backend integration phase.
+
+Future backend integration boundary:
 
 ```text
 screens -> feature hooks/state -> repositories -> datasource -> Supabase/API
 ```
 
-Screen không gọi datasource trực tiếp. Cách này giúp UI không bị đổi khi backend chuyển từ mock sang Supabase hoặc REST.
+Do not implement the future datasource/repository layer during the current UI-only phase.
 
-## Route map
+## Route Map
 
-| Role | Routes |
-| --- | --- |
-| Auth | `/login`, `/profile` |
-| Student | `/student/dashboard`, `/student/application`, `/student/room`, `/student/tickets`, `/student/invoices`, `/student/requests`, `/student/notifications` |
-| Staff | `/staff/dashboard`, `/staff/applications`, `/staff/allocation`, `/staff/checkin-checkout`, `/staff/residents`, `/staff/maintenance`, `/staff/billing`, `/staff/tasks` |
-| Admin | `/admin/dashboard`, `/admin/users`, `/admin/buildings-rooms`, `/admin/allocation-rules`, `/admin/reports-audit`, `/admin/settings` |
+| Role    | Routes                                                                                                                                                                |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth    | `/login`, `/profile`                                                                                                                                                  |
+| Student | `/student/dashboard`, `/student/application`, `/student/room`, `/student/tickets`, `/student/invoices`, `/student/requests`, `/student/notifications`                 |
+| Staff   | `/staff/dashboard`, `/staff/applications`, `/staff/allocation`, `/staff/checkin-checkout`, `/staff/residents`, `/staff/maintenance`, `/staff/billing`, `/staff/tasks` |
+| Admin   | `/admin/dashboard`, `/admin/users`, `/admin/buildings-rooms`, `/admin/allocation-rules`, `/admin/reports-audit`, `/admin/settings`                                    |
 
-## Feature map theo DB/schema docs
+## MVP Feature Map
 
-| Table/View | Feature owner |
-| --- | --- |
-| `profiles` | `auth/profile`, `admin/users`, `staff/residents` |
-| `semesters` | `admin/settings`, `student/application`, `staff/applications` |
-| `buildings`, `rooms` | `admin/buildings_rooms`, `staff/allocation`, `student/room` |
-| `room_assets` | `admin/buildings_rooms`, `staff/checkin_checkout`, `student/room`, `student/tickets` |
-| `staff_shifts` | `staff/tasks`, `staff/dashboard` |
-| `applications` | `student/application`, `staff/applications`, `staff/allocation` |
-| `student_rooms` | `staff/checkin_checkout`, `student/room`, `staff/residents` |
-| `maintenance_tickets` | `student/tickets`, `staff/maintenance`, `staff/dashboard` |
-| `invoices` | `student/invoices`, `staff/billing` |
-| `student_requests` | `student/requests`, `staff/residents` |
-| `notifications` | `student/notifications`, `admin/settings` |
-| `tasks` | `staff/tasks`, `admin/reports_audit` |
-| `allocation_rules` | `admin/allocation_rules`, `staff/allocation` |
-| `audit_logs` | `admin/reports_audit` |
-| `v_room_occupancy` | `staff/allocation`, `admin/buildings_rooms` |
-| `v_student_current_room` | `student/room`, `staff/residents` |
-| `v_student_roommates` | `student/room`, `staff/residents` |
-| `v_invoice_balance` | `student/invoices`, `staff/billing` |
-| `v_ticket_sla` | `staff/maintenance`, `staff/dashboard` |
+| Backlog                        | UI area                                                                                | Owner                          |
+| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------ |
+| `US-001` Login/RBAC            | `features/auth/login`, role layout/router                                              | Member 2 + Member 1            |
+| `US-002` Consent               | `features/auth` or student application entry                                           | Member 2                       |
+| `US-003` Application form      | `features/student/application`                                                         | Member 3                       |
+| `US-004` Application status    | `features/student/application`, `features/student/room`                                | Member 3                       |
+| `US-005` Staff review          | `features/staff/applications`                                                          | Member 5                       |
+| `US-006` Room/bed ledger       | `features/admin/buildings_rooms`, `features/staff/allocation`, `features/student/room` | Member 7 + Member 5 + Member 3 |
+| `US-008` Assignment suggestion | `features/staff/allocation`                                                            | Member 5                       |
+| `US-009` Override reason       | `features/staff/allocation`                                                            | Member 5                       |
+| `US-010` Check-in/out          | `features/staff/checkin_checkout`                                                      | Member 5                       |
+| `US-011` Maintenance ticket    | `features/student/tickets`                                                             | Member 4                       |
+| `US-012` SLA board             | `features/staff/maintenance`                                                           | Member 6                       |
+| `US-013` Confirm/reopen        | `features/student/tickets`, `features/staff/maintenance`                               | Member 4 + Member 6            |
+| `US-014` Operations dashboard  | `features/staff/dashboard`, `features/admin/dashboard`                                 | Member 5 + Member 7            |
 
-## UI reuse rule
+## DB/View Reference Map
 
-- Primitive generic để trong `src/components/ui`.
-- Component có nghiệp vụ feature để trong chính feature đó.
-- Component được ít nhất 2 feature dùng thì đề xuất chuyển vào `src/components/common`.
-- Không tạo global barrel export lớn. Feature tự import trực tiếp file cần dùng.
+| Table/View               | Feature owner                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| `profiles`               | `auth/profile`, `admin/users`, `staff/residents`                                     |
+| `semesters`              | `admin/settings`, `student/application`, `staff/applications`                        |
+| `buildings`, `rooms`     | `admin/buildings_rooms`, `staff/allocation`, `student/room`                          |
+| `room_assets`            | `admin/buildings_rooms`, `staff/checkin_checkout`, `student/room`, `student/tickets` |
+| `staff_shifts`           | `staff/tasks`, `staff/dashboard`                                                     |
+| `applications`           | `student/application`, `staff/applications`, `staff/allocation`                      |
+| `student_rooms`          | `staff/checkin_checkout`, `student/room`, `staff/residents`                          |
+| `maintenance_tickets`    | `student/tickets`, `staff/maintenance`, `staff/dashboard`                            |
+| `invoices`               | `student/invoices`, `staff/billing`                                                  |
+| `student_requests`       | `student/requests`, `staff/residents`                                                |
+| `notifications`          | `student/notifications`, `admin/settings`                                            |
+| `tasks`                  | `staff/tasks`, `admin/reports_audit`                                                 |
+| `allocation_rules`       | `admin/allocation_rules`, `staff/allocation`                                         |
+| `audit_logs`             | `admin/reports_audit`                                                                |
+| `v_room_occupancy`       | `staff/allocation`, `admin/buildings_rooms`                                          |
+| `v_student_current_room` | `student/room`, `staff/residents`                                                    |
+| `v_student_roommates`    | `student/room`, `staff/residents`                                                    |
+| `v_invoice_balance`      | `student/invoices`, `staff/billing`                                                  |
+| `v_ticket_sla`           | `staff/maintenance`, `staff/dashboard`                                               |
 
-## Future backend integration
+## UI Reuse Rules
 
-Khi bắt đầu Supabase/backend, tạo lớp mới thay vì sửa screen trực tiếp:
+- Generic primitive: `src/components/ui`.
+- Project reusable component used by 2+ features: `src/components/common`.
+- Navigation component: `src/components/navigation`.
+- Feature-specific component: beside the page in its feature folder.
+- No large global barrel export. Import the file you need.
+
+## Accessibility and UX Bar
+
+- All interactive elements keyboard accessible.
+- Icon-only actions need `aria-label`.
+- Decorative lucide icons use `aria-hidden="true"`.
+- Tables support horizontal overflow on mobile.
+- Forms show label, required state, validation/error copy, and clear action.
+- Empty/loading/error states are required for screens that display remote-like data.
+- Dashboard KPI cards must connect to actionable lists.
+
+## Build Quality Bar
+
+Before merge or handoff:
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
+
+Notes:
+
+- `npm run typecheck` uses `tsc -b --noEmit` so project references are checked like production build.
+- shadcn files may produce React Refresh warnings when exporting variant helpers; warnings are acceptable unless they block CI.
+
+## Future Backend Integration
+
+When backend work opens, add layers instead of editing pages directly:
 
 ```text
 src/features/<role>/<feature>/application
@@ -112,4 +200,4 @@ src/data/datasources
 src/data/repositories
 ```
 
-Supabase client nếu có sẽ đặt ở shared datasource layer, không đặt trong page component.
+Supabase/API clients belong in shared datasource infrastructure, not in page components.

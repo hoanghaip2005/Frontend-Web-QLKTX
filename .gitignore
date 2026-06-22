@@ -7,4 +7,5 @@ dist
 *.local
 coverage
 .vite
+.vite-dev.*.log
 *.tsbuildinfo
