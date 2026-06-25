@@ -1,5 +1,9 @@
 # QLKTX Web Frontend Agent Rules
 
+## Root Sync Rule
+
+Read `D:\QLKTX\AGENTS.md` and `D:\QLKTX\TEAM_ASSIGNMENT.md` before working in this repo. Those root files define cross-source sync rules for Jira, Figma, PM docs, backend API docs, frontend code, and harness structure. This file only adds web-frontend-specific rules.
+
 ## Mission
 
 Build the `Frontend-Web-QLKTX` React web frontend for DormCare Hub / QLKTX. This repo is the team workspace for the web-responsive MVP UI. The current phase is frontend-only: build navigable, realistic, demo-ready screens with mock data so 7 members can work in parallel with low merge conflict.

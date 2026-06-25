@@ -4,6 +4,10 @@
 
 Nhóm 7 người code song song trong `Frontend-Web-QLKTX` nhưng vẫn giữ route, shared UI, mock data và docs đồng bộ. Repo này đang ở phase dựng UI web-responsive bằng mock data, bám MVP trong `docs/pm/`.
 
+## Root Rule
+
+`D:\QLKTX\AGENTS.md` và `D:\QLKTX\TEAM_ASSIGNMENT.md` là nguồn quy tắc gốc cho đồng bộ Jira, Figma, docs, backend, frontend và harness. File này chỉ là bản web-repo local; nếu có mâu thuẫn thì root rule thắng.
+
 Feature members không cần clone hoặc đọc trực tiếp folder `D:\NGONGOCDANGKHOA\docs` khi làm task hằng ngày. Member 1/PM dùng folder đó như upstream source rồi refresh snapshot trong `docs/pm/` khi cần.
 
 ## Source of Truth
