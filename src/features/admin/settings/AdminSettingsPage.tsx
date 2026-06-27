@@ -82,8 +82,8 @@ export function AdminSettingsPage() {
               {systemSettings.map((setting) => (
                 <TableRow key={setting.name}>
                   <TableCell>
-                    <div className="font-medium text-slate-950">{setting.name}</div>
-                    <div className="text-xs text-slate-500">{setting.note}</div>
+                    <div className="font-medium text-[#32121d]">{setting.name}</div>
+                    <div className="text-xs text-[#76525f]">{setting.note}</div>
                   </TableCell>
                   <TableCell>{setting.value}</TableCell>
                   <TableCell>{setting.owner}</TableCell>
@@ -102,7 +102,7 @@ export function AdminSettingsPage() {
         >
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                 Active semester
                 <Input
                   value={semesterName}
@@ -112,7 +112,7 @@ export function AdminSettingsPage() {
                   }}
                 />
               </label>
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                 Application window
                 <Select defaultValue="open">
                   <SelectTrigger className="w-full">
@@ -128,19 +128,19 @@ export function AdminSettingsPage() {
             </div>
 
             <div className="grid gap-2">
-              <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">
+              <label className="flex items-start gap-3 rounded-lg border border-[#f2b8c8] bg-white p-3 text-sm text-[#76525f]">
                 <Checkbox defaultChecked />
                 <span>
-                  <span className="block font-medium text-slate-900">
+                  <span className="block font-medium text-[#32121d]">
                     Require consent before application submit
                   </span>
                   Student data notice remains mandatory for US-002.
                 </span>
               </label>
-              <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">
+              <label className="flex items-start gap-3 rounded-lg border border-[#f2b8c8] bg-white p-3 text-sm text-[#76525f]">
                 <Checkbox defaultChecked />
                 <span>
-                  <span className="block font-medium text-slate-900">
+                  <span className="block font-medium text-[#32121d]">
                     Notify staff about maintenance hold changes
                   </span>
                   Mock notification only; no push, email, or SIS integration.
@@ -148,7 +148,7 @@ export function AdminSettingsPage() {
               </label>
             </div>
 
-            <label className="grid gap-1 text-sm font-medium text-slate-700">
+            <label className="grid gap-1 text-sm font-medium text-[#76525f]">
               Required change reason
               <Textarea
                 value={changeReason}
@@ -193,12 +193,12 @@ export function AdminSettingsPage() {
             const Icon = item.icon;
 
             return (
-              <div key={item.title} className="rounded-lg border border-slate-200 bg-white p-4">
+              <div key={item.title} className="rounded-lg border border-[#f2b8c8] bg-white p-4">
                 <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-brand-700" aria-hidden="true" />
-                  <h2 className="text-sm font-semibold text-slate-950">{item.title}</h2>
+                  <Icon className="h-4 w-4 text-[#7a1632]" aria-hidden="true" />
+                  <h2 className="text-sm font-semibold text-[#32121d]">{item.title}</h2>
                 </div>
-                <p className="mt-2 text-sm leading-5 text-slate-600">{item.copy}</p>
+                <p className="mt-2 text-sm leading-5 text-[#76525f]">{item.copy}</p>
                 <div className="mt-3">
                   <StatusBadge status="Deferred" />
                 </div>

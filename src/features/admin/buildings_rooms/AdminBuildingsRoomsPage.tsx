@@ -98,7 +98,7 @@ export function AdminBuildingsRoomsPage() {
                 <Badge variant="secondary">{building.available} available</Badge>
                 <Badge variant="outline">{building.hold} on hold</Badge>
               </div>
-              <p className="text-sm text-slate-600">{building.risk}</p>
+              <p className="text-sm text-[#76525f]">{building.risk}</p>
             </div>
           </SectionPanel>
         ))}
@@ -120,7 +120,7 @@ export function AdminBuildingsRoomsPage() {
           <div className="flex flex-wrap gap-2">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-2.5 top-2 h-4 w-4 text-slate-400"
+                className="pointer-events-none absolute left-2.5 top-2 h-4 w-4 text-[#9b7180]"
                 aria-hidden="true"
               />
               <Input
@@ -179,8 +179,8 @@ export function AdminBuildingsRoomsPage() {
               {filteredRooms.map((room) => (
                 <TableRow key={room.room}>
                   <TableCell>
-                    <div className="font-medium text-slate-950">{room.room}</div>
-                    <div className="text-xs text-slate-500">{room.gender} policy</div>
+                    <div className="font-medium text-[#32121d]">{room.room}</div>
+                    <div className="text-xs text-[#76525f]">{room.gender} policy</div>
                   </TableCell>
                   <TableCell>
                     <CapacityBar
@@ -193,10 +193,10 @@ export function AdminBuildingsRoomsPage() {
                   <TableCell>
                     <StatusBadge status={room.status} />
                   </TableCell>
-                  <TableCell className="max-w-64 whitespace-normal text-slate-600">
+                  <TableCell className="max-w-64 whitespace-normal text-[#76525f]">
                     {room.assets}
                   </TableCell>
-                  <TableCell className="max-w-72 whitespace-normal text-slate-600">
+                  <TableCell className="max-w-72 whitespace-normal text-[#76525f]">
                     {room.auditHint}
                   </TableCell>
                   <TableCell className="text-right">
@@ -214,7 +214,7 @@ export function AdminBuildingsRoomsPage() {
                             excluded from assignment suggestions.
                           </DialogDescription>
                         </DialogHeader>
-                        <label className="grid gap-1 text-sm font-medium text-slate-700">
+                        <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                           Hold reason
                           <Textarea
                             value={holdReason}

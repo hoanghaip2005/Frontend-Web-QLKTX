@@ -86,7 +86,7 @@ export function AdminUsersPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3">
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                   Target user
                   <Select defaultValue="USR-STF-014">
                     <SelectTrigger className="w-full">
@@ -101,11 +101,11 @@ export function AdminUsersPage() {
                     </SelectContent>
                   </Select>
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                   Requested scope
                   <Input defaultValue="Building B allocation override until 2026-07-08" />
                 </label>
-                <label className="grid gap-1 text-sm font-medium text-slate-700">
+                <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                   Required admin reason
                   <Textarea
                     value={reason}
@@ -149,7 +149,7 @@ export function AdminUsersPage() {
           <div className="flex flex-wrap gap-2">
             <div className="relative">
               <Search
-                className="pointer-events-none absolute left-2.5 top-2 h-4 w-4 text-slate-400"
+                className="pointer-events-none absolute left-2.5 top-2 h-4 w-4 text-[#9b7180]"
                 aria-hidden="true"
               />
               <Input
@@ -198,8 +198,8 @@ export function AdminUsersPage() {
               {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
-                    <div className="font-medium text-slate-950">{user.name}</div>
-                    <div className="text-xs text-slate-500">{user.id}</div>
+                    <div className="font-medium text-[#32121d]">{user.name}</div>
+                    <div className="text-xs text-[#76525f]">{user.id}</div>
                   </TableCell>
                   <TableCell>{user.role}</TableCell>
                   <TableCell className="max-w-52 whitespace-normal">{user.scope}</TableCell>
@@ -207,7 +207,7 @@ export function AdminUsersPage() {
                     <StatusBadge status={user.status} />
                   </TableCell>
                   <TableCell>{user.lastActive}</TableCell>
-                  <TableCell className="max-w-72 whitespace-normal text-slate-600">
+                  <TableCell className="max-w-72 whitespace-normal text-[#76525f]">
                     {user.risk}
                   </TableCell>
                   <TableCell className="text-right">

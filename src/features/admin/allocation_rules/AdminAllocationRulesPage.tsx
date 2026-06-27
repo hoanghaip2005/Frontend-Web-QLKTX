@@ -114,8 +114,8 @@ export function AdminAllocationRulesPage() {
                 {filteredRules.map((rule) => (
                   <TableRow key={rule.id} data-state={rule.id === selectedRuleId ? 'selected' : ''}>
                     <TableCell>
-                      <div className="font-medium text-slate-950">{rule.name}</div>
-                      <div className="text-xs text-slate-500">{rule.id}</div>
+                      <div className="font-medium text-[#32121d]">{rule.name}</div>
+                      <div className="text-xs text-[#76525f]">{rule.id}</div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{rule.category}</Badge>
@@ -124,7 +124,7 @@ export function AdminAllocationRulesPage() {
                     <TableCell>
                       <StatusBadge status={rule.status} />
                     </TableCell>
-                    <TableCell className="max-w-52 whitespace-normal text-slate-600">
+                    <TableCell className="max-w-52 whitespace-normal text-[#76525f]">
                       {rule.lastChanged}
                     </TableCell>
                     <TableCell className="text-right">
@@ -154,16 +154,16 @@ export function AdminAllocationRulesPage() {
                 <StatusBadge status={selectedRule.status} />
                 <Badge variant="secondary">{selectedRule.category}</Badge>
               </div>
-              <h2 className="mt-3 text-base font-semibold text-slate-950">{selectedRule.name}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{selectedRule.explanation}</p>
+              <h2 className="mt-3 text-base font-semibold text-[#32121d]">{selectedRule.name}</h2>
+              <p className="mt-2 text-sm leading-6 text-[#76525f]">{selectedRule.explanation}</p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                 Priority
                 <Input type="number" min={1} max={10} defaultValue={selectedRule.priority} />
               </label>
-              <label className="grid gap-1 text-sm font-medium text-slate-700">
+              <label className="grid gap-1 text-sm font-medium text-[#76525f]">
                 Status
                 <Select defaultValue={selectedRule.status}>
                   <SelectTrigger className="w-full">
@@ -178,15 +178,15 @@ export function AdminAllocationRulesPage() {
               </label>
             </div>
 
-            <label className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-700">
+            <label className="flex items-start gap-3 rounded-lg border border-[#f2b8c8] bg-white p-3 text-sm text-[#76525f]">
               <Checkbox defaultChecked={selectedRule.category === 'Required'} />
               <span>
-                <span className="block font-medium text-slate-900">Require audit on change</span>
+                <span className="block font-medium text-[#32121d]">Require audit on change</span>
                 Sensitive rule edits should appear in Reports/Audit with actor, target, and reason.
               </span>
             </label>
 
-            <label className="grid gap-1 text-sm font-medium text-slate-700">
+            <label className="grid gap-1 text-sm font-medium text-[#76525f]">
               Change reason
               <Textarea
                 value={reason}

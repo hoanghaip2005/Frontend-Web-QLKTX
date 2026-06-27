@@ -92,12 +92,12 @@ export function AdminReportsAuditPage() {
                 {reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell>
-                      <div className="font-medium text-slate-950">{report.name}</div>
-                      <div className="text-xs text-slate-500">{report.id}</div>
+                      <div className="font-medium text-[#32121d]">{report.name}</div>
+                      <div className="text-xs text-[#76525f]">{report.id}</div>
                     </TableCell>
                     <TableCell>{report.owner}</TableCell>
                     <TableCell>{report.cadence}</TableCell>
-                    <TableCell className="max-w-72 whitespace-normal text-slate-600">
+                    <TableCell className="max-w-72 whitespace-normal text-[#76525f]">
                       {report.source}
                     </TableCell>
                     <TableCell>
@@ -155,13 +155,13 @@ export function AdminReportsAuditPage() {
                   {filteredAudit.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell>
-                        <div className="font-medium text-slate-950">{record.id}</div>
-                        <div className="text-xs text-slate-500">{record.time}</div>
+                        <div className="font-medium text-[#32121d]">{record.id}</div>
+                        <div className="text-xs text-[#76525f]">{record.time}</div>
                       </TableCell>
                       <TableCell>{record.actor}</TableCell>
                       <TableCell>{record.action}</TableCell>
                       <TableCell>{record.target}</TableCell>
-                      <TableCell className="max-w-80 whitespace-normal text-slate-600">
+                      <TableCell className="max-w-80 whitespace-normal text-[#76525f]">
                         {record.reason}
                       </TableCell>
                       <TableCell>
@@ -184,14 +184,14 @@ export function AdminReportsAuditPage() {
               {deferredReports.map((report) => (
                 <div
                   key={report.id}
-                  className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between"
+                  className="flex flex-col gap-3 rounded-lg border border-[#f2b8c8] bg-white p-4 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-sm font-semibold text-slate-950">{report.name}</h2>
+                      <h2 className="text-sm font-semibold text-[#32121d]">{report.name}</h2>
                       <StatusBadge status={report.status} />
                     </div>
-                    <p className="mt-2 text-sm text-slate-600">
+                    <p className="mt-2 text-sm text-[#76525f]">
                       Source planned later: {report.source}. Owner: {report.owner}.
                     </p>
                   </div>
@@ -210,8 +210,8 @@ export function AdminReportsAuditPage() {
         </TabsContent>
       </Tabs>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-        <History className="h-4 w-4 text-brand-700" aria-hidden="true" />
+      <div className="flex flex-wrap items-center gap-2 text-sm text-[#76525f]">
+        <History className="h-4 w-4 text-[#7a1632]" aria-hidden="true" />
         <span>
           Evidence ready: report list, audit filter, empty state, and deferred export state.
         </span>

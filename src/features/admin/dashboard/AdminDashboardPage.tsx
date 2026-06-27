@@ -75,18 +75,18 @@ export function AdminDashboardPage() {
               {buildingSummaries.map((building) => (
                 <TableRow key={building.id}>
                   <TableCell>
-                    <div className="font-medium text-slate-950">{building.building}</div>
-                    <div className="text-xs text-slate-500">{building.owner}</div>
+                    <div className="font-medium text-[#32121d]">{building.building}</div>
+                    <div className="text-xs text-[#76525f]">{building.owner}</div>
                   </TableCell>
                   <TableCell>{building.genderPolicy}</TableCell>
                   <TableCell>
                     <CapacityBar occupied={building.occupied} total={building.beds} />
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium text-slate-950">{building.available} beds</div>
-                    <div className="text-xs text-slate-500">{building.hold} on hold</div>
+                    <div className="font-medium text-[#32121d]">{building.available} beds</div>
+                    <div className="text-xs text-[#76525f]">{building.hold} on hold</div>
                   </TableCell>
-                  <TableCell className="max-w-56 whitespace-normal text-slate-600">
+                  <TableCell className="max-w-56 whitespace-normal text-[#76525f]">
                     {building.risk}
                   </TableCell>
                 </TableRow>
@@ -101,15 +101,15 @@ export function AdminDashboardPage() {
         >
           <div className="space-y-3">
             {dashboardQueues.map((item) => (
-              <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-3">
+              <div key={item.label} className="rounded-lg border border-[#f2b8c8] bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-slate-950">{item.label}</p>
-                    <p className="mt-1 text-sm text-slate-500">{item.count}</p>
+                    <p className="text-sm font-medium text-[#32121d]">{item.label}</p>
+                    <p className="mt-1 text-sm text-[#76525f]">{item.count}</p>
                   </div>
                   <Badge variant="outline">{item.source}</Badge>
                 </div>
-                <p className="mt-3 text-sm leading-5 text-slate-600">{item.action}</p>
+                <p className="mt-3 text-sm leading-5 text-[#76525f]">{item.action}</p>
               </div>
             ))}
           </div>
@@ -146,8 +146,8 @@ export function AdminDashboardPage() {
                   <TableCell>{record.time}</TableCell>
                   <TableCell>{record.actor}</TableCell>
                   <TableCell className="max-w-72 whitespace-normal">
-                    <div className="font-medium text-slate-950">{record.action}</div>
-                    <div className="text-xs text-slate-500">{record.reason}</div>
+                    <div className="font-medium text-[#32121d]">{record.action}</div>
+                    <div className="text-xs text-[#76525f]">{record.reason}</div>
                   </TableCell>
                   <TableCell>{record.target}</TableCell>
                   <TableCell>
@@ -160,7 +160,7 @@ export function AdminDashboardPage() {
         </div>
       </SectionPanel>
 
-      <div className="flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+      <div className="flex items-center gap-2 rounded-lg border border-[#f2b8c8] bg-[#fff1f5] px-3 py-2 text-sm text-[#7a1632]">
         <Activity className="h-4 w-4" aria-hidden="true" />
         Mock state: dashboard data is local only; no Supabase, fetch, real auth, or export endpoint.
       </div>
