@@ -21,11 +21,11 @@ export const roleNavItems = {
     { label: 'Ca trực/Nhiệm vụ', path: '/staff/tasks' },
   ],
   admin: [
-    { label: 'Dashboard', path: '/admin/dashboard' },
-    { label: 'User/RBAC', path: '/admin/users' },
-    { label: 'Tòa/Phòng', path: '/admin/buildings-rooms' },
-    { label: 'Luật phân phòng', path: '/admin/allocation-rules' },
-    { label: 'Báo cáo/Audit', path: '/admin/reports-audit' },
+    { label: 'Tổng quan', path: '/admin/dashboard' },
+    { label: 'Người dùng', path: '/admin/users' },
+    { label: 'Tòa phòng', path: '/admin/buildings-rooms' },
+    { label: 'Báo cáo', path: '/admin/reports-audit' },
+    { label: 'Hồ sơ', path: '/admin/allocation-rules' },
     { label: 'Cài đặt', path: '/admin/settings' },
   ],
 } satisfies Record<AppRole, NavItem[]>;
