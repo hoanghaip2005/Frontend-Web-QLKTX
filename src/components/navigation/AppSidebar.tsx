@@ -51,7 +51,7 @@ export function AppSidebar({ role, items }: AppSidebarProps) {
           <p
             className={cn('text-sm font-semibold text-slate-950', isAdmin && 'text-lg text-white')}
           >
-            {appConfig.name}
+            {isAdmin ? 'DormCare Hub' : appConfig.name}
           </p>
           <p className={cn('text-xs text-slate-500', isAdmin && 'mt-1 text-[#e6b84a]')}>
             {isAdmin ? 'Bảng quản trị' : appConfig.product}

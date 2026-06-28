@@ -24,8 +24,8 @@ export const roleNavItems = {
     { label: 'Tổng quan', path: '/admin/dashboard' },
     { label: 'Người dùng', path: '/admin/users' },
     { label: 'Tòa phòng', path: '/admin/buildings-rooms' },
-    { label: 'Báo cáo', path: '/admin/reports-audit' },
-    { label: 'Hồ sơ', path: '/admin/allocation-rules' },
+    { label: 'Báo cáo', path: '/admin/allocation-rules' },
+    { label: 'Hồ sơ', path: '/admin/reports-audit' },
     { label: 'Cài đặt', path: '/admin/settings' },
   ],
 } satisfies Record<AppRole, NavItem[]>;

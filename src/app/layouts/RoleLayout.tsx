@@ -36,10 +36,10 @@ export function RoleLayout({ role }: RoleLayoutProps) {
 
 const adminTopbarTitle: Record<string, string> = {
   '/admin/dashboard': 'Tổng quan',
-  '/admin/users': 'Người dùng',
+  '/admin/users': 'Người dùng RBAC',
   '/admin/buildings-rooms': 'Tòa phòng',
-  '/admin/reports-audit': 'Báo cáo',
-  '/admin/allocation-rules': 'Hồ sơ',
+  '/admin/allocation-rules': 'Quy định xếp phòng',
+  '/admin/reports-audit': 'Báo cáo Audit',
   '/admin/settings': 'Cài đặt',
 };
 
