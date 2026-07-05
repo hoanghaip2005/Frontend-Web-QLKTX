@@ -81,6 +81,41 @@ export async function login(account: string, password: string): Promise<AuthSess
   };
 }
 
+export async function fetchProfile(): Promise<UserProfile> {
+  const [profile, currentRoom] = await Promise.all([
+    http<{
+      id: string;
+      full_name: string;
+      email: string;
+      role: AppRole;
+      status: string;
+      student_code?: string | null;
+      staff_code?: string | null;
+      department?: string | null;
+      class_name?: string | null;
+      cohort?: string | null;
+      phone_number?: string | null;
+    }>('/api/auth/me'),
+    http<{ room_code: string; bed_code: string } | null>('/api/student-rooms/current').catch(
+      () => null,
+    ),
+  ]);
+  return {
+    id: profile.id,
+    name: profile.full_name,
+    email: profile.email,
+    role: profile.role,
+    status: profile.status,
+    code: profile.student_code ?? profile.staff_code ?? undefined,
+    department: profile.department ?? undefined,
+    className: profile.class_name ?? undefined,
+    cohort: profile.cohort ?? undefined,
+    phone: profile.phone_number ?? undefined,
+    room: currentRoom?.room_code,
+    bed: currentRoom?.bed_code,
+  };
+}
+
 // Mutable mock stores (deep-copied so page reloads reset state).
 const mockState = {
   applications: structuredClone(applications) as Application[],
@@ -113,6 +148,41 @@ export type BillingInvoice = {
   status: 'unpaid' | 'paid' | 'reviewing' | 'partial' | 'rejected';
   rawStatus?: string;
   paymentRecords: Record<string, unknown>[];
+};
+
+export type UserProfile = {
+  id: string;
+  name: string;
+  email: string;
+  role: AppRole;
+  status: string;
+  code?: string;
+  department?: string;
+  className?: string;
+  cohort?: string;
+  phone?: string;
+  room?: string;
+  bed?: string;
+};
+
+export type StaffTask = {
+  backendId: string;
+  code: string;
+  title: string;
+  description: string;
+  status: 'open' | 'assigned' | 'in_progress' | 'done' | 'cancelled' | 'ignored';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  assignee?: string;
+  dueAt?: string;
+};
+
+export type AdminDashboard = {
+  occupancy: number;
+  availableBeds: number;
+  pendingApplications: number;
+  overdueTickets: number;
+  slaCompliance: number;
+  auditCount: number;
 };
 
 export type MomoPaymentSession = {
@@ -966,4 +1036,70 @@ export async function markAllNotificationsRead(): Promise<void> {
     return;
   }
   await http('/api/notifications/read-all', { method: 'POST' });
+}
+
+// ---------- staff tasks ----------
+
+export async function fetchStaffTasks(): Promise<StaffTask[]> {
+  const rows = await http<
+    {
+      id: string;
+      task_code: string;
+      title: string;
+      description?: string | null;
+      status: StaffTask['status'];
+      priority: StaffTask['priority'];
+      assigned_name?: string | null;
+      due_at?: string | null;
+    }[]
+  >('/api/tasks?pageSize=100');
+  return rows.map((row) => ({
+    backendId: row.id,
+    code: row.task_code,
+    title: row.title,
+    description: row.description ?? '',
+    status: row.status,
+    priority: row.priority,
+    assignee: row.assigned_name ?? undefined,
+    dueAt: row.due_at?.slice(0, 16).replace('T', ' '),
+  }));
+}
+
+export async function setTaskStatus(task: StaffTask, status: StaffTask['status']): Promise<void> {
+  await http(`/api/tasks/${task.backendId}`, {
+    method: 'PATCH',
+    body: { status },
+  });
+}
+
+// ---------- admin live ops ----------
+
+export async function fetchAdminDashboard(): Promise<AdminDashboard> {
+  const [staff, audit] = await Promise.all([fetchStaffDashboard(), fetchAuditLogs()]);
+  const occupancy =
+    staff.bedsTotal > 0 ? Math.round((staff.bedsOccupied / staff.bedsTotal) * 100) : 0;
+  return {
+    occupancy,
+    availableBeds: Math.max(staff.bedsTotal - staff.bedsOccupied, 0),
+    pendingApplications: staff.pendingApplications,
+    overdueTickets: staff.urgentTickets,
+    slaCompliance:
+      staff.openTickets > 0
+        ? Math.max(0, Math.round(((staff.openTickets - staff.urgentTickets) / staff.openTickets) * 100))
+        : 100,
+    auditCount: audit.length,
+  };
+}
+
+export async function setRoomMaintenance(room: Room, hold: boolean): Promise<void> {
+  if (!live()) {
+    await delay();
+    const row = mockState.rooms.find((item) => item.id === room.id);
+    if (row) row.status = hold ? 'maintenance-hold' : 'available';
+    return;
+  }
+  await http(`/api/rooms/${room.backendId ?? room.id}`, {
+    method: 'PATCH',
+    body: { status: hold ? 'maintenance' : 'available' },
+  });
 }

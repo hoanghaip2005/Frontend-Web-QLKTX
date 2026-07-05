@@ -16,18 +16,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { fetchAuditLogs } from '@/lib/api/repositories';
+import { fetchAdminDashboard, fetchAuditLogs } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import { dashboardKpis } from '@/mocks/data/dormData';
-
-const reportRows = [
-  { name: 'Báo cáo lấp đầy theo tòa', scope: 'Occupancy, giường trống', status: 'Xem trong dashboard' },
-  { name: 'Báo cáo SLA sửa chữa', scope: `SLA compliance ${dashboardKpis.slaCompliance}%`, status: 'Xem trong SLA board' },
-  { name: 'Xuất PDF/Excel', scope: 'Báo cáo tổng hợp', status: 'Sẵn sàng cấu hình' },
-];
 
 export function AdminReportsAuditPage() {
   const { data: auditRows, loading } = useAsyncData(fetchAuditLogs);
+  const { data: dashboard } = useAsyncData(fetchAdminDashboard);
   const [query, setQuery] = useState('');
 
   const filtered = (auditRows ?? []).filter(
@@ -36,12 +30,25 @@ export function AdminReportsAuditPage() {
       entry.action.toLowerCase().includes(query.toLowerCase()) ||
       entry.target.toLowerCase().includes(query.toLowerCase()),
   );
+  const reportRows = [
+    {
+      name: 'Báo cáo lấp đầy theo tòa',
+      scope: `${dashboard?.occupancy ?? 0}% lấp đầy, ${dashboard?.availableBeds ?? 0} giường trống`,
+      status: 'Xem trong dashboard',
+    },
+    {
+      name: 'Báo cáo SLA sửa chữa',
+      scope: `SLA compliance ${dashboard?.slaCompliance ?? 0}%`,
+      status: 'Xem trong SLA board',
+    },
+    { name: 'Xuất PDF/Excel', scope: 'Báo cáo tổng hợp', status: 'Cần backend export endpoint' },
+  ];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Báo cáo & Audit"
-        description="Lịch sử thao tác nhạy cảm và danh mục báo cáo."
+        description="Lịch sử thao tác nhạy cảm và danh mục báo cáo từ live API."
         badges={['US-020', 'US-021']}
       />
 
@@ -96,7 +103,7 @@ export function AdminReportsAuditPage() {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((entry) => (
-                        <TableRow key={entry.at}>
+                        <TableRow key={`${entry.at}-${entry.action}-${entry.target}`}>
                           <TableCell className="whitespace-nowrap">{entry.at}</TableCell>
                           <TableCell className="font-mono text-xs">{entry.actor}</TableCell>
                           <TableCell className="font-medium">{entry.action}</TableCell>

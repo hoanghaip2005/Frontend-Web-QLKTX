@@ -35,13 +35,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { confirmTicket, createTicket, fetchTickets } from '@/lib/api/repositories';
+import {
+  confirmTicket,
+  createTicket,
+  fetchCurrentRoom,
+  fetchTickets,
+} from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import { currentStudent } from '@/mocks/data/dormData';
 import type { Ticket } from '@/mocks/data/dormData';
 
 export function StudentTicketsPage() {
   const { data: rows, loading, error, reload } = useAsyncData(fetchTickets);
+  const { data: currentRoom } = useAsyncData(fetchCurrentRoom);
   const [creating, setCreating] = useState(false);
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('normal');
@@ -120,14 +125,14 @@ export function StudentTicketsPage() {
             <h2 className="text-base font-semibold text-slate-950">Ticket mới</h2>
             <div className="mt-2 flex items-center gap-2 rounded-app bg-slate-50 p-3 text-sm text-slate-600">
               <QrCode className="h-4 w-4 text-brand-600" aria-hidden="true" />
-              Ngữ cảnh: phòng {currentStudent.room} (quét QR tài sản để gắn đúng thiết bị)
+              Ngữ cảnh: phòng {currentRoom?.roomCode ?? 'chưa nhận phòng'} (quét QR tài sản để gắn đúng thiết bị)
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-slate-700">
                 Phòng / vị trí
-                <Input value={currentStudent.room} readOnly />
+                <Input value={currentRoom?.roomCode ?? 'Chưa nhận phòng'} readOnly />
               </label>
               <div className="grid gap-2 text-sm font-medium text-slate-700">
                 Mức độ khẩn cấp

@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -7,10 +7,22 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Separator } from '@/components/ui/separator';
-import { currentStudent } from '@/mocks/data/dormData';
+import { fetchProfile } from '@/lib/api/repositories';
+import { useAsyncData } from '@/lib/hooks/useAsyncData';
 
 export function ProfilePage() {
+  const { data: profile, loading, error } = useAsyncData(fetchProfile);
+  const initials =
+    profile?.name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('') || 'ND';
+
+  if (loading) return <LoadingState />;
+
   return (
     <main className="min-h-screen bg-surface p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -25,16 +37,22 @@ export function ProfilePage() {
           <CardHeader>
             <div className="flex items-center gap-4">
               <Avatar className="h-14 w-14">
-                <AvatarFallback className="bg-brand-600 text-lg text-white">PH</AvatarFallback>
+                <AvatarFallback className="bg-brand-600 text-lg text-white">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl font-semibold text-slate-950">{currentStudent.name}</h1>
-                  <Badge variant="outline">Sinh viên</Badge>
-                  <StatusBadge status="active" />
+                  <h1 className="text-xl font-semibold text-slate-950">
+                    {profile?.name ?? 'Không tải được hồ sơ'}
+                  </h1>
+                  <Badge variant="outline">{profile?.role ?? 'user'}</Badge>
+                  <StatusBadge status={profile?.status ?? (error ? 'error' : 'active')} />
                 </div>
                 <p className="mt-1 text-sm text-slate-500">
-                  {currentStudent.id} - {currentStudent.cohort} {currentStudent.major}
+                  {[profile?.code ?? profile?.id, profile?.cohort, profile?.className]
+                    .filter(Boolean)
+                    .join(' - ')}
                 </p>
               </div>
             </div>
@@ -43,19 +61,22 @@ export function ProfilePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-slate-700">
                 Email
-                <Input value={currentStudent.email} readOnly />
+                <Input value={profile?.email ?? ''} readOnly />
               </label>
               <label className="grid gap-2 text-sm font-medium text-slate-700">
                 Số điện thoại
-                <Input value={currentStudent.phone} readOnly />
+                <Input value={profile?.phone ?? ''} readOnly />
               </label>
               <label className="grid gap-2 text-sm font-medium text-slate-700">
                 Phòng / Giường
-                <Input value={`${currentStudent.room} / ${currentStudent.bed}`} readOnly />
+                <Input
+                  value={[profile?.room, profile?.bed].filter(Boolean).join(' / ') || 'Chưa nhận phòng'}
+                  readOnly
+                />
               </label>
               <label className="grid gap-2 text-sm font-medium text-slate-700">
-                Diện ưu tiên
-                <Input value={currentStudent.priority} readOnly />
+                Đơn vị / lớp
+                <Input value={profile?.department ?? profile?.className ?? ''} readOnly />
               </label>
             </div>
             <Separator />

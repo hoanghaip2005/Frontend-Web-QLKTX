@@ -167,6 +167,7 @@ export function mapRoom(dto: RoomDto): Room {
     };
   });
   return {
+    backendId: dto.id,
     id: dto.room_code,
     building: dto.building_name ?? `Tòa ${dto.building_code}`,
     floor: dto.floor_no,

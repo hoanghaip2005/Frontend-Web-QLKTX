@@ -31,6 +31,10 @@ const statusMap: Record<string, { label: string; tone: Tone }> = {
   reopened: { label: 'Mở lại', tone: 'danger' },
   closed: { label: 'Đã đóng', tone: 'neutral' },
   overdue: { label: 'Quá hạn', tone: 'danger' },
+  open: { label: 'Mở', tone: 'info' },
+  in_progress: { label: 'Đang xử lý', tone: 'warning' },
+  done: { label: 'Hoàn tất', tone: 'success' },
+  ignored: { label: 'Bỏ qua', tone: 'neutral' },
 
   available: { label: 'Còn chỗ', tone: 'success' },
   full: { label: 'Đầy', tone: 'neutral' },

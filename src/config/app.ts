@@ -1,30 +1,24 @@
 import type { AppRole } from '@/types/roles';
 
-export type ApiMode = 'mock' | 'live';
-
-const rawMode = import.meta.env.VITE_API_MODE as string | undefined;
+export type ApiMode = 'live';
 
 export const appConfig = {
   name: 'QLKTX Web',
   product: 'DormCare Hub',
   phase: 'Backend integration',
-  /**
-   * mock: repositories serve in-memory data from src/mocks (default, no backend needed).
-   * live: repositories call the Backend-QLKTX REST API (VITE_API_URL).
-   */
-  apiMode: (rawMode === 'live' ? 'live' : 'mock') as ApiMode,
-  apiBaseUrl: (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:4000',
+  apiMode: 'live' as ApiMode,
+  apiBaseUrl:
+    (import.meta.env.VITE_API_URL as string | undefined) ??
+    'https://qlktx-backend-2302700155.azurewebsites.net',
 } as const;
 
 /**
- * Seeded local-dev identities (Backend-QLKTX/database/local-dev-seed.sql).
- * In live mode without Supabase Auth, the backend DEV_AUTH_BYPASS accepts these
- * via the x-dev-user-id header. Replaced by real Supabase sessions later.
+ * Seeded demo identities accepted by backend DEV_AUTH_BYPASS.
  */
 export const devUserIds: Record<AppRole, string> = {
-  student: '33333333-3333-4333-8333-333333333333',
-  staff: '22222222-2222-4222-8222-222222222222',
-  admin: '11111111-1111-4111-8111-111111111111',
+  student: '22222222-2222-4222-8222-222222222221',
+  staff: '11111111-1111-4111-8111-111111111111',
+  admin: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
 };
 
 const ROLE_STORAGE_KEY = 'qlktx.role';

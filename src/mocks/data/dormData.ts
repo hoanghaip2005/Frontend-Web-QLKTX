@@ -145,6 +145,7 @@ export type Bed = {
 };
 
 export type Room = {
+  backendId?: string;
   id: string;
   building: string;
   floor: number;

@@ -22,9 +22,9 @@ import {
   confirmAssignment,
   createAndSubmitApplication,
   fetchApplications,
+  fetchProfile,
 } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import { currentStudent } from '@/mocks/data/dormData';
 import type { Application, ApplicationStatus } from '@/mocks/data/dormData';
 
 type Step = 'consent' | 'form';
@@ -159,6 +159,7 @@ function ApplicationStatusView({
 
 export function StudentApplicationPage() {
   const { data: applications, loading, reload } = useAsyncData(fetchApplications);
+  const { data: profile } = useAsyncData(fetchProfile);
   const [step, setStep] = useState<Step>('consent');
   const [consented, setConsented] = useState(false);
   const [preference, setPreference] = useState('');
@@ -288,19 +289,19 @@ export function StudentApplicationPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-2 text-sm font-medium text-slate-700">
                     Họ và tên
-                    <Input value={currentStudent.name} readOnly />
+                    <Input value={profile?.name ?? ''} readOnly />
                   </label>
                   <label className="grid gap-2 text-sm font-medium text-slate-700">
                     MSSV
-                    <Input value={currentStudent.id} readOnly />
+                    <Input value={profile?.code ?? profile?.id ?? ''} readOnly />
                   </label>
                   <label className="grid gap-2 text-sm font-medium text-slate-700">
                     Giới tính
-                    <Input value={currentStudent.gender} readOnly />
+                    <Input value="Theo hồ sơ sinh viên" readOnly />
                   </label>
                   <label className="grid gap-2 text-sm font-medium text-slate-700">
                     Khóa / Ngành
-                    <Input value={`${currentStudent.cohort} - ${currentStudent.major}`} readOnly />
+                    <Input value={[profile?.cohort, profile?.className].filter(Boolean).join(' - ')} readOnly />
                   </label>
                 </div>
                 <Separator />

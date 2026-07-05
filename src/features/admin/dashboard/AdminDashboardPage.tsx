@@ -3,50 +3,57 @@ import { ArrowRight, BedDouble, ClipboardList, ShieldCheck, Wrench } from 'lucid
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Progress } from '@/components/ui/progress';
-import { fetchAuditLogs } from '@/lib/api/repositories';
+import { fetchAdminDashboard, fetchAuditLogs, fetchRooms } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import { dashboardKpis } from '@/mocks/data/dormData';
-
-const kpiCards = [
-  {
-    label: 'Tỷ lệ lấp đầy',
-    value: `${dashboardKpis.occupancy}%`,
-    hint: `${dashboardKpis.availableBeds} giường trống toàn KTX`,
-    to: '/admin/buildings-rooms',
-    icon: BedDouble,
-  },
-  {
-    label: 'Hồ sơ chờ duyệt',
-    value: String(dashboardKpis.pendingApplications),
-    hint: 'Mục tiêu: xử lý trong 3 ngày làm việc',
-    to: '/admin/reports-audit',
-    icon: ClipboardList,
-  },
-  {
-    label: 'Ticket quá hạn',
-    value: String(dashboardKpis.overdueTickets),
-    hint: `SLA compliance hiện tại ${dashboardKpis.slaCompliance}%`,
-    to: '/admin/reports-audit',
-    icon: Wrench,
-  },
-];
-
-const occupancyByBuilding = [
-  { building: 'Tòa A (Nam)', percent: 92 },
-  { building: 'Tòa B (Nữ)', percent: 88 },
-  { building: 'Tòa C (Nam)', percent: 0 },
-];
 
 export function AdminDashboardPage() {
+  const { data: dashboard, loading } = useAsyncData(fetchAdminDashboard);
   const { data: auditRows } = useAsyncData(fetchAuditLogs);
+  const { data: rooms } = useAsyncData(fetchRooms);
   const auditEntries = auditRows ?? [];
+  const occupancyByBuilding = [...new Set((rooms ?? []).map((room) => room.building))].map(
+    (building) => {
+      const buildingRooms = (rooms ?? []).filter((room) => room.building === building);
+      const total = buildingRooms.reduce((sum, room) => sum + room.capacity, 0);
+      const occupied = buildingRooms.reduce((sum, room) => sum + room.occupied, 0);
+      return { building, percent: total > 0 ? Math.round((occupied / total) * 100) : 0 };
+    },
+  );
+
+  if (loading || !dashboard) return <LoadingState />;
+
+  const kpiCards = [
+    {
+      label: 'Tỷ lệ lấp đầy',
+      value: `${dashboard.occupancy}%`,
+      hint: `${dashboard.availableBeds} giường trống toàn KTX`,
+      to: '/admin/buildings-rooms',
+      icon: BedDouble,
+    },
+    {
+      label: 'Hồ sơ chờ duyệt',
+      value: String(dashboard.pendingApplications),
+      hint: 'Mục tiêu: xử lý trong 3 ngày làm việc',
+      to: '/admin/reports-audit',
+      icon: ClipboardList,
+    },
+    {
+      label: 'Ticket ưu tiên cao',
+      value: String(dashboard.overdueTickets),
+      hint: `SLA compliance hiện tại ${dashboard.slaCompliance}%`,
+      to: '/admin/reports-audit',
+      icon: Wrench,
+    },
+  ];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Admin Dashboard"
-        description="KPI toàn hệ thống — mỗi chỉ số dẫn tới danh sách liên quan."
+        description="KPI toàn hệ thống từ live API, mỗi chỉ số dẫn tới danh sách liên quan."
         badges={['US-014']}
       />
 
@@ -67,7 +74,9 @@ export function AdminDashboardPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   {kpi.label}
                 </p>
-                <span className="grid h-8 w-8 place-items-center rounded-app bg-brand-50"><kpi.icon className="h-4 w-4 text-brand-700" aria-hidden="true" /></span>
+                <span className="grid h-8 w-8 place-items-center rounded-app bg-brand-50">
+                  <kpi.icon className="h-4 w-4 text-brand-700" aria-hidden="true" />
+                </span>
               </div>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{kpi.value}</p>
               <p className="mt-1 text-sm text-slate-500">{kpi.hint}</p>
@@ -87,10 +96,13 @@ export function AdminDashboardPage() {
           <CardHeader>
             <h2 className="text-base font-semibold text-slate-950">Lấp đầy theo tòa nhà</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Tòa C đang khóa bảo trì nên tỷ lệ bằng 0.
+              Dữ liệu tính từ danh sách phòng backend.
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
+            {occupancyByBuilding.length === 0 && (
+              <EmptyState title="Chưa có phòng" description="Chạy seed backend để có biểu đồ lấp đầy." />
+            )}
             {occupancyByBuilding.map((row) => (
               <div key={row.building}>
                 <div className="flex items-center justify-between text-sm">
@@ -113,8 +125,11 @@ export function AdminDashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
+            {auditEntries.length === 0 && (
+              <EmptyState title="Chưa có audit" description="Các thao tác nhạy cảm sẽ xuất hiện tại đây." />
+            )}
             {auditEntries.slice(0, 4).map((entry) => (
-              <div key={entry.at} className="rounded-app border border-slate-200 p-3">
+              <div key={`${entry.at}-${entry.action}`} className="rounded-app border border-slate-200 p-3">
                 <p className="text-sm font-medium text-slate-900">
                   {entry.action} - {entry.target}
                 </p>

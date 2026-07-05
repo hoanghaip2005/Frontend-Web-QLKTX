@@ -14,14 +14,11 @@ import {
 } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
 import { getSession } from '@/config/app';
-import { currentStudent } from '@/mocks/data/dormData';
 
 export function StudentDashboardPage() {
   const session = getSession();
-  const displayName = session?.name ?? currentStudent.name;
-  const displayInfo = session
-    ? [session.code, session.email].filter(Boolean).join(' - ')
-    : `${currentStudent.id} - ${currentStudent.cohort} ${currentStudent.major}`;
+  const displayName = session?.name ?? 'Sinh viên';
+  const displayInfo = [session?.code, session?.email].filter(Boolean).join(' - ');
   const { data, loading, error, reload } = useAsyncData(fetchStudentDashboard);
   const { data: tickets } = useAsyncData(fetchTickets);
   const { data: notifications } = useAsyncData(fetchNotifications);
