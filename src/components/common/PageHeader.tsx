@@ -6,7 +6,6 @@ type PageHeaderProps = {
   title: string;
   description: string;
   badges?: string[];
-  phase2?: boolean;
   actions?: ReactNode;
 };
 

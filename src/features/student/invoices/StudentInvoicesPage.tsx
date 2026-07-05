@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, CheckCircle2, CreditCard, Receipt } from 'lucide-react';
+import QRCode from 'qrcode';
+import { AlertCircle, CheckCircle2, CreditCard, ExternalLink, Receipt } from 'lucide-react';
 import { useState } from 'react';
 
 import { PageHeader } from '@/components/common/PageHeader';
@@ -7,6 +8,14 @@ import { StatusBadge } from '@/components/common/StatusBadge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import {
@@ -17,14 +26,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { createMomoPayment, fetchInvoices, type BillingInvoice } from '@/lib/api/repositories';
+import {
+  createMomoPayment,
+  fetchInvoices,
+  type BillingInvoice,
+  type MomoPaymentSession,
+} from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
+
+type MomoDialogState = {
+  invoice: BillingInvoice;
+  payment: MomoPaymentSession;
+  qrDataUrl: string;
+};
 
 export function StudentInvoicesPage() {
   const [searchParams] = useSearchParams();
   const { data: invoices, loading, error, reload } = useAsyncData(fetchInvoices);
   const [payingCode, setPayingCode] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [momoDialog, setMomoDialog] = useState<MomoDialogState | null>(null);
 
   const paymentResult = searchParams.get('payment');
 
@@ -32,10 +53,17 @@ export function StudentInvoicesPage() {
     setActionError(null);
     setPayingCode(invoice.code);
     try {
-      const { payUrl } = await createMomoPayment(invoice);
-      window.location.assign(payUrl);
+      const payment = await createMomoPayment(invoice);
+      const qrPayload = payment.qrCodeUrl ?? payment.deeplink ?? payment.payUrl;
+      const qrDataUrl = await QRCode.toDataURL(qrPayload, {
+        width: 280,
+        margin: 2,
+        errorCorrectionLevel: 'M',
+      });
+      setMomoDialog({ invoice, payment, qrDataUrl });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Không tạo được giao dịch MoMo');
+    } finally {
       setPayingCode(null);
     }
   };
@@ -115,7 +143,7 @@ export function StudentInvoicesPage() {
                           {invoice.status === 'paid'
                             ? 'Đã thanh toán'
                             : payingCode === invoice.code
-                              ? 'Đang mở MoMo...'
+                              ? 'Đang tạo QR...'
                               : 'Thanh toán MoMo'}
                         </Button>
                       </TableCell>
@@ -131,6 +159,48 @@ export function StudentInvoicesPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={momoDialog !== null} onOpenChange={(open) => !open && setMomoDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Quét QR MoMo</DialogTitle>
+            <DialogDescription>
+              Hóa đơn {momoDialog?.invoice.code}. Mở MoMo trên điện thoại rồi quét mã này để thanh
+              toán.
+            </DialogDescription>
+          </DialogHeader>
+          {momoDialog && (
+            <div className="grid justify-items-center gap-3">
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <img
+                  src={momoDialog.qrDataUrl}
+                  alt={`QR MoMo cho hóa đơn ${momoDialog.invoice.code}`}
+                  className="h-64 w-64"
+                />
+              </div>
+              <div className="grid gap-1 text-center text-sm">
+                <p className="font-medium text-slate-950">{momoDialog.invoice.balance}</p>
+                {momoDialog.payment.orderId && (
+                  <p className="text-xs text-slate-500">
+                    Mã giao dịch: {momoDialog.payment.orderId}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setMomoDialog(null)}>
+              Đóng
+            </Button>
+            {momoDialog && (
+              <Button type="button" onClick={() => window.location.assign(momoDialog.payment.payUrl)}>
+                <ExternalLink className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Mở trang MoMo
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

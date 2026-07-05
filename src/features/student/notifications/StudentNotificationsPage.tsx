@@ -30,7 +30,6 @@ export function StudentNotificationsPage() {
         title="Thông báo"
         description="Cập nhật về hồ sơ, phòng ở, phí và ticket."
         badges={['US-018']}
-        phase2
         actions={
           <Button type="button" variant="secondary" onClick={markAllRead}>
             <CheckCheck className="h-4 w-4" aria-hidden="true" />

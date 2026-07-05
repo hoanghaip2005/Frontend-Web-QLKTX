@@ -112,6 +112,14 @@ export type BillingInvoice = {
   paymentRecords: Record<string, unknown>[];
 };
 
+export type MomoPaymentSession = {
+  payUrl: string;
+  deeplink?: string;
+  qrCodeUrl?: string;
+  orderId?: string;
+  requestId?: string;
+};
+
 type InvoiceDto = {
   id: string;
   invoice_code: string;
@@ -649,13 +657,17 @@ export async function fetchInvoices(): Promise<BillingInvoice[]> {
   return (await http<InvoiceDto[]>('/api/invoices?pageSize=100')).map(mapInvoice);
 }
 
-export async function createMomoPayment(invoice: BillingInvoice): Promise<{ payUrl: string }> {
+export async function createMomoPayment(invoice: BillingInvoice): Promise<MomoPaymentSession> {
   if (!live()) {
     await delay();
-    return { payUrl: '/student/invoices?payment=mock' };
+    return {
+      payUrl: '/student/invoices?payment=success',
+      qrCodeUrl: '/student/invoices?payment=success',
+      orderId: `MOCK-${invoice.code}`,
+    };
   }
   if (!invoice.backendId) throw new Error('Thiếu mã hóa đơn');
-  return http<{ payUrl: string }>(`/api/invoices/${invoice.backendId}/momo`, { method: 'POST' });
+  return http<MomoPaymentSession>(`/api/invoices/${invoice.backendId}/momo`, { method: 'POST' });
 }
 
 export async function markInvoicePaid(invoice: BillingInvoice, note: string): Promise<void> {
