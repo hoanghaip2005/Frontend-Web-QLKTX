@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/table';
 import { fetchCurrentRoom, fetchRooms } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import { currentStudent } from '@/mocks/data/dormData';
 
 const roomAssets = [
   { id: 'QR-A302-FAN01', name: 'Quạt trần', condition: 'Đang báo sửa' },
