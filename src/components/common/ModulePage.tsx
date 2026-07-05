@@ -25,7 +25,6 @@ export function ModulePage({ pageId }: ModulePageProps) {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{content.owner}</Badge>
-            <Badge>Mock data</Badge>
           </div>
           <h1 className="mt-3 text-2xl font-semibold text-slate-950">{content.title}</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{content.description}</p>

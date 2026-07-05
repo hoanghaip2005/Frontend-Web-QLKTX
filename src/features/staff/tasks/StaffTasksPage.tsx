@@ -1,8 +1,5 @@
-import { CalendarClock } from 'lucide-react';
-
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Table,
@@ -24,17 +21,8 @@ export function StaffTasksPage() {
     <div className="space-y-6">
       <PageHeader
         title="Ca trực & nhiệm vụ"
-        description="Bảng phân ca và task queue."
-        phase2
+        description="Bảng phân ca và hàng chờ công việc vận hành trong ngày."
       />
-
-      <Alert>
-        <CalendarClock className="h-4 w-4" aria-hidden="true" />
-        <AlertTitle>Tính năng Phase 2</AlertTitle>
-        <AlertDescription>
-          Quản lý ca trực/nhiệm vụ sẽ được kích hoạt sau MVP. Dữ liệu dưới đây chỉ minh họa layout.
-        </AlertDescription>
-      </Alert>
 
       <Card>
         <CardHeader>

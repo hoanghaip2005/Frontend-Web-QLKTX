@@ -4,7 +4,6 @@ import { ChevronRight, LogOut, Search } from 'lucide-react';
 import { AppSidebar } from '@/components/navigation/AppSidebar';
 import { roleNavItems } from '@/app/router/routes';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { appConfig, clearSession, getSession } from '@/config/app';
@@ -70,17 +69,6 @@ export function RoleLayout({ role }: RoleLayoutProps) {
                 aria-label="Tìm kiếm nhanh"
               />
             </div>
-
-            <Badge
-              variant="secondary"
-              className={
-                appConfig.apiMode === 'live'
-                  ? 'shrink-0 bg-emerald-100 text-emerald-800'
-                  : 'shrink-0 bg-slate-100 text-slate-600'
-              }
-            >
-              {appConfig.apiMode === 'live' ? 'Live API' : 'Mock data'}
-            </Badge>
 
             <div className="flex shrink-0 items-center gap-2">
               <Avatar className="h-8 w-8">

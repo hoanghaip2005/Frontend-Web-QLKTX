@@ -77,7 +77,7 @@ export function AdminUsersPage() {
         actions={
           <Button type="button" variant="secondary" disabled>
             <UserPlus className="h-4 w-4" aria-hidden="true" />
-            Mời người dùng (Phase 2)
+            Mời người dùng
           </Button>
         }
       />

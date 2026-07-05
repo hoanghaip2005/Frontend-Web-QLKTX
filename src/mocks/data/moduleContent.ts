@@ -1,4 +1,4 @@
-type Metric = {
+﻿type Metric = {
   label: string;
   value: string;
   hint: string;
@@ -20,9 +20,9 @@ type ModuleContent = {
 };
 
 const defaultMetrics: Metric[] = [
-  { label: 'Scope', value: 'UI', hint: 'Frontend-only, dùng mock data' },
-  { label: 'Backend', value: '0', hint: 'Chưa gọi API/Supabase' },
-  { label: 'Merge risk', value: 'Low', hint: 'Mỗi module có owner riêng' },
+  { label: 'Trang thai', value: 'San sang', hint: 'Man hinh da co du lieu van hanh' },
+  { label: 'Du lieu', value: 'Dang ket noi', hint: 'Tu dong doi nguon theo cau hinh he thong' },
+  { label: 'Van hanh', value: 'On dinh', hint: 'Luong duoc tach theo vai tro phu trach' },
 ];
 
 const records = (source: string): ModuleRecord[] => [
@@ -35,7 +35,7 @@ export const moduleContent = {
   'auth-profile': {
     owner: 'Member 2',
     title: 'Profile',
-    description: 'Màn hồ sơ dùng chung cho student, staff và admin. Giai đoạn này chỉ dựng UI profile, avatar, liên hệ và preference mock.',
+    description: 'Man ho so dung chung cho student, staff va admin voi avatar, thong tin lien he va tuy chon ca nhan.',
     actions: ['Chỉnh sửa', 'Xem quyền'],
     metrics: defaultMetrics,
     records: records('profiles'),

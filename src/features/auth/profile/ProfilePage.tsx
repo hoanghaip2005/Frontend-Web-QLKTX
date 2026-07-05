@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -72,7 +72,7 @@ export function ProfilePage() {
               </ul>
             </div>
             <Button type="button" variant="secondary">
-              Yêu cầu cập nhật thông tin (mock)
+              Yêu cầu cập nhật thông tin
             </Button>
           </CardContent>
         </Card>

@@ -37,9 +37,9 @@ const roleIcon = {
 } satisfies Record<AppRole, LucideIcon>;
 
 const roleLabel = {
-  student: 'Student Portal',
-  staff: 'Staff Console',
-  admin: 'Admin Governance',
+  student: 'Cổng sinh viên',
+  staff: 'Vận hành KTX',
+  admin: 'Quản trị hệ thống',
 } satisfies Record<AppRole, string>;
 
 const iconRules: [string, LucideIcon][] = [
@@ -82,7 +82,7 @@ export function AppSidebar({ role, items }: AppSidebarProps) {
           <p className="truncate text-sm font-semibold tracking-tight text-white">
             {appConfig.product}
           </p>
-          <p className="truncate text-[11px] text-emerald-200/70">{appConfig.name}</p>
+          <p className="truncate text-[11px] text-emerald-200/70">Quản lý ký túc xá</p>
         </div>
       </div>
 
@@ -124,13 +124,6 @@ export function AppSidebar({ role, items }: AppSidebarProps) {
           );
         })}
       </nav>
-
-      <div className="border-t border-white/10 px-5 py-3">
-        <p className="text-[11px] text-emerald-200/60">
-          {appConfig.apiMode === 'live' ? 'Kết nối Backend API' : 'Chế độ mock data'} - HK1
-          2026-2027
-        </p>
-      </div>
     </aside>
   );
 }

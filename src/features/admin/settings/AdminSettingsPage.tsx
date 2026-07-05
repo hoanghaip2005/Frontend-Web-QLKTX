@@ -1,7 +1,6 @@
 import { CalendarRange, ShieldAlert } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -16,9 +15,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 
 const integrations = [
-  { name: 'Đồng bộ SIS (US-022)', status: 'Deferred - cần phê duyệt cấp trường' },
-  { name: 'Cổng thanh toán (US-023)', status: 'Deferred - ngoài phạm vi MVP' },
-  { name: 'Import Excel (US-019)', status: 'Phase 2' },
+  { name: 'Đồng bộ SIS', status: 'Chờ cấu hình' },
+  { name: 'Cổng thanh toán MoMo', status: 'UAT' },
+  { name: 'Import Excel', status: 'Chờ cấu hình' },
 ];
 
 export function AdminSettingsPage() {
@@ -26,7 +25,7 @@ export function AdminSettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Cài đặt hệ thống"
-        description="Học kỳ, SLA mặc định và các tích hợp bị hoãn."
+        description="Học kỳ, SLA mặc định và trạng thái tích hợp vận hành."
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -74,23 +73,18 @@ export function AdminSettingsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="button">Lưu cấu hình (mock)</Button>
+            <Button type="button">Lưu cấu hình</Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <h2 className="text-base font-semibold text-slate-950">Tích hợp & tính năng hoãn</h2>
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-brand-600" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-slate-950">Tích hợp</h2>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert>
-              <ShieldAlert className="h-4 w-4" aria-hidden="true" />
-              <AlertTitle>Guardrail phạm vi MVP</AlertTitle>
-              <AlertDescription>
-                Các tích hợp dưới đây bị khóa cho tới khi có phê duyệt phạm vi từ stakeholder theo
-                release plan.
-              </AlertDescription>
-            </Alert>
+          <CardContent>
             <ul className="space-y-3">
               {integrations.map((item) => (
                 <li

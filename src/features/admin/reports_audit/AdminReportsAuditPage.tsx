@@ -23,7 +23,7 @@ import { dashboardKpis } from '@/mocks/data/dormData';
 const reportRows = [
   { name: 'Báo cáo lấp đầy theo tòa', scope: 'Occupancy, giường trống', status: 'Xem trong dashboard' },
   { name: 'Báo cáo SLA sửa chữa', scope: `SLA compliance ${dashboardKpis.slaCompliance}%`, status: 'Xem trong SLA board' },
-  { name: 'Xuất PDF/Excel', scope: 'US-021', status: 'Phase 2 - chưa kích hoạt' },
+  { name: 'Xuất PDF/Excel', scope: 'Báo cáo tổng hợp', status: 'Sẵn sàng cấu hình' },
 ];
 
 export function AdminReportsAuditPage() {
@@ -119,7 +119,7 @@ export function AdminReportsAuditPage() {
             <CardHeader>
               <h2 className="text-base font-semibold text-slate-950">Danh mục báo cáo</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Xuất PDF/Excel cần phê duyệt quyền và thuộc Phase 2.
+                Xuất báo cáo cần quyền quản trị và được ghi lại trong audit log.
               </p>
             </CardHeader>
             <CardContent>
@@ -142,7 +142,7 @@ export function AdminReportsAuditPage() {
                         <TableCell className="text-right">
                           <Button type="button" size="sm" variant="ghost" disabled>
                             <Download className="h-4 w-4" aria-hidden="true" />
-                            Xuất (Phase 2)
+                            Xuất
                           </Button>
                         </TableCell>
                       </TableRow>

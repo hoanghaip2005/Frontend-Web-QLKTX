@@ -20,11 +20,10 @@ export function StudentRequestsPage() {
       <PageHeader
         title="Yêu cầu sinh viên"
         description="Đổi phòng, gia hạn, về muộn, trả phòng."
-        phase2
         actions={
           <Button type="button" variant="secondary" disabled>
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Tạo yêu cầu (Phase 2)
+            Tạo yêu cầu
           </Button>
         }
       />

@@ -25,6 +25,7 @@ import {
   auditLog,
   currentStudent,
   dashboardKpis,
+  invoices,
   residents,
   rooms,
   studentNotifications,
@@ -36,6 +37,7 @@ import type {
   Application,
   AssignmentSuggestion,
   AuditEntry,
+  Invoice as MockInvoice,
   Room,
   StudentNotification,
   SystemUser,
@@ -81,12 +83,79 @@ export async function login(account: string, password: string): Promise<AuthSess
 const mockState = {
   applications: structuredClone(applications) as Application[],
   tickets: structuredClone(tickets) as Ticket[],
+  invoices: structuredClone(invoices) as MockInvoice[],
   rooms: structuredClone(rooms) as Room[],
   users: structuredClone(systemUsers) as SystemUser[],
   rules: structuredClone(allocationRules) as AllocationRule[],
   audit: structuredClone(auditLog) as AuditEntry[],
   notifications: structuredClone(studentNotifications) as StudentNotification[],
 };
+
+const currencyFormatter = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+  maximumFractionDigits: 0,
+});
+
+export type BillingInvoice = {
+  backendId?: string;
+  code: string;
+  studentName?: string;
+  studentCode?: string;
+  period: string;
+  amount: string;
+  paidAmount: string;
+  balance: string;
+  due: string;
+  status: 'unpaid' | 'paid' | 'reviewing' | 'partial' | 'rejected';
+  rawStatus?: string;
+  paymentRecords: Record<string, unknown>[];
+};
+
+type InvoiceDto = {
+  id: string;
+  invoice_code: string;
+  student_name?: string | null;
+  student_code?: string | null;
+  period_start: string;
+  period_end: string;
+  total_amount: string | number;
+  paid_amount?: string | number | null;
+  balance_amount?: string | number | null;
+  due_date?: string | null;
+  payment_status: string;
+  status: string;
+  payment_records?: Record<string, unknown>[];
+};
+
+function formatCurrency(value: string | number | null | undefined) {
+  return currencyFormatter.format(Number(value ?? 0));
+}
+
+function invoiceStatus(status: string): BillingInvoice['status'] {
+  if (status === 'paid') return 'paid';
+  if (status === 'pending_reconciliation') return 'reviewing';
+  if (status === 'partial') return 'partial';
+  if (status === 'rejected') return 'rejected';
+  return 'unpaid';
+}
+
+function mapInvoice(row: InvoiceDto): BillingInvoice {
+  return {
+    backendId: row.id,
+    code: row.invoice_code,
+    studentName: row.student_name ?? undefined,
+    studentCode: row.student_code ?? undefined,
+    period: `${row.period_start.slice(0, 10)} - ${row.period_end.slice(0, 10)}`,
+    amount: formatCurrency(row.total_amount),
+    paidAmount: formatCurrency(row.paid_amount),
+    balance: formatCurrency(row.balance_amount ?? row.total_amount),
+    due: row.due_date?.slice(0, 10) ?? '-',
+    status: invoiceStatus(row.payment_status),
+    rawStatus: row.payment_status,
+    paymentRecords: row.payment_records ?? [],
+  };
+}
 
 function pushMockAudit(action: string, target: string, reason: string) {
   mockState.audit.unshift({
@@ -559,6 +628,64 @@ export async function fetchStaffAssignees(): Promise<{ id: string; name: string 
     '/api/profiles?role=staff&pageSize=50',
   );
   return rows.map((row) => ({ id: row.id, name: row.full_name }));
+}
+
+// ---------- invoices / billing ----------
+
+export async function fetchInvoices(): Promise<BillingInvoice[]> {
+  if (!live()) {
+    await delay();
+    return mockState.invoices.map((invoice) => ({
+      code: invoice.id,
+      period: invoice.period,
+      amount: invoice.amount,
+      paidAmount: invoice.status === 'paid' ? invoice.amount : '0đ',
+      balance: invoice.status === 'paid' ? '0đ' : invoice.amount,
+      due: invoice.due,
+      status: invoice.status,
+      paymentRecords: [],
+    }));
+  }
+  return (await http<InvoiceDto[]>('/api/invoices?pageSize=100')).map(mapInvoice);
+}
+
+export async function createMomoPayment(invoice: BillingInvoice): Promise<{ payUrl: string }> {
+  if (!live()) {
+    await delay();
+    return { payUrl: '/student/invoices?payment=mock' };
+  }
+  if (!invoice.backendId) throw new Error('Thiếu mã hóa đơn');
+  return http<{ payUrl: string }>(`/api/invoices/${invoice.backendId}/momo`, { method: 'POST' });
+}
+
+export async function markInvoicePaid(invoice: BillingInvoice, note: string): Promise<void> {
+  if (!live()) {
+    await delay();
+    const row = mockState.invoices.find((item) => item.id === invoice.code);
+    if (row) row.status = 'paid';
+    return;
+  }
+  if (!invoice.backendId) throw new Error('Thiếu mã hóa đơn');
+  await http(`/api/invoices/${invoice.backendId}/reconcile`, {
+    method: 'POST',
+    body: {
+      payment_records: [
+        ...invoice.paymentRecords,
+        {
+          id: `manual-${Date.now()}`,
+          method: 'manual',
+          amount: Number(invoice.balance.replace(/\D/g, '')) || 0,
+          status: 'verified',
+          note,
+          created_at: new Date().toISOString(),
+        },
+      ],
+      payment_status: 'paid',
+      status: 'paid',
+      paid_at: new Date().toISOString(),
+      note,
+    },
+  });
 }
 
 // ---------- admin ----------

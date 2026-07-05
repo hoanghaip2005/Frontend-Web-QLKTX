@@ -57,7 +57,7 @@ export function AdminBuildingsRoomsPage() {
         actions={
           <Button type="button" variant="secondary" disabled>
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Thêm phòng (Phase 2 import)
+            Thêm phòng
           </Button>
         }
       />

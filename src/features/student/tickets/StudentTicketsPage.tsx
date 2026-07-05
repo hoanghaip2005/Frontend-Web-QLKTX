@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Camera, CheckCircle2, Plus, QrCode, RotateCcw } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
@@ -144,7 +144,7 @@ export function StudentTicketsPage() {
             </label>
             <div className="rounded-app border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
               <Camera className="mb-2 h-5 w-5 text-slate-400" aria-hidden="true" />
-              Ảnh minh chứng (mock) - kéo thả hoặc chọn tệp JPG/PNG tối đa 5 MB.
+              Ảnh minh chứng - kéo thả hoặc chọn tệp JPG/PNG tối đa 5 MB.
             </div>
             <div className="flex gap-2">
               <Button type="button" disabled={saving} onClick={submitTicket}>
