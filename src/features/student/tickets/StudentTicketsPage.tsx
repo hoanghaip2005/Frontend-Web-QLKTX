@@ -1,5 +1,15 @@
 ﻿import { useState } from 'react';
-import { Camera, CheckCircle2, Plus, QrCode, RotateCcw } from 'lucide-react';
+import {
+  Camera,
+  CheckCircle2,
+  Clock3,
+  History,
+  MapPin,
+  Plus,
+  QrCode,
+  RotateCcw,
+  UserRound,
+} from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -166,38 +176,75 @@ export function StudentTicketsPage() {
           description="Khi bạn báo sự cố, ticket sẽ hiển thị tại đây kèm trạng thái SLA."
         />
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4">
           {myTickets.map((ticket) => (
-            <Card key={ticket.id}>
-              <CardHeader>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-base font-semibold text-slate-950">
-                      {ticket.id} - {ticket.title}
+            <Card key={ticket.id} className="overflow-hidden">
+              <CardHeader className="border-b border-slate-100 bg-white">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs font-medium text-slate-500">
+                        {ticket.id}
+                      </span>
+                      <StatusBadge status={ticket.status} />
+                      <StatusBadge status={ticket.priority} />
+                      {ticket.overdue && <StatusBadge status="overdue" />}
+                    </div>
+                    <h2 className="text-base font-semibold leading-6 text-slate-950">
+                      {ticket.title}
                     </h2>
-                    <StatusBadge status={ticket.status} />
-                    <StatusBadge status={ticket.priority} />
-                    {ticket.overdue && <StatusBadge status="overdue" />}
                   </div>
-                  <p className="text-sm text-slate-500">Hạn xử lý: {ticket.dueAt}</p>
+                  <div className="flex shrink-0 items-center gap-2 rounded-app bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                    <Clock3 className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                    Hạn xử lý: {ticket.dueAt}
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-slate-500">
-                  {ticket.room}
-                  {ticket.asset ? ` - ${ticket.asset}` : ''}
-                  {ticket.assignee ? ` - Phụ trách: ${ticket.assignee}` : ' - Chờ phân loại'}
-                </p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-slate-600">{ticket.description}</p>
+              <CardContent className="space-y-4 pt-4">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="flex items-start gap-2 rounded-app bg-slate-50 p-3">
+                    <MapPin className="mt-0.5 h-4 w-4 text-brand-600" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase text-slate-400">Vị trí</p>
+                      <p className="truncate text-sm font-medium text-slate-800">
+                        {ticket.room}
+                        {ticket.asset ? ` - ${ticket.asset}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 rounded-app bg-slate-50 p-3 md:col-span-2">
+                    <UserRound className="mt-0.5 h-4 w-4 text-brand-600" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase text-slate-400">Phụ trách</p>
+                      <p className="truncate text-sm font-medium text-slate-800">
+                        {ticket.assignee ?? 'Chờ phân loại'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="rounded-app border border-slate-100 bg-white p-3 text-sm leading-6 text-slate-700">
+                  {ticket.description}
+                </p>
                 {ticket.history.length > 0 && (
-                  <ol className="space-y-2 border-l-2 border-slate-100 pl-4">
-                    {ticket.history.map((item, index) => (
-                      <li key={`${item.at}-${index}`} className="text-xs text-slate-500">
-                        <span className="font-medium text-slate-700">{item.at}</span> -{' '}
-                        {item.event}
-                      </li>
-                    ))}
-                  </ol>
+                  <div className="rounded-app border border-slate-100 p-3">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase text-slate-400">
+                      <History className="h-4 w-4" aria-hidden="true" />
+                      Lịch sử xử lý
+                    </div>
+                    <ol className="grid gap-2 sm:grid-cols-2">
+                      {ticket.history.map((item, index) => (
+                        <li
+                          key={`${item.at}-${index}`}
+                          className="rounded-app bg-slate-50 px-3 py-2 text-xs text-slate-600"
+                        >
+                          <span className="font-medium text-slate-800">{item.at}</span>
+                          <span className="mx-1 text-slate-300">•</span>
+                          {item.event}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 )}
                 {ticket.status === 'resolved' && (
                   <div className="flex flex-wrap gap-2 rounded-app bg-emerald-50 p-3">

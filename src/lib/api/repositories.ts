@@ -425,11 +425,23 @@ export async function fetchCurrentRoom(): Promise<{
       '/api/student-rooms/roommates',
     ).catch(() => []),
   ]);
+  if (!current) {
+    const checkedIn = (await fetchApplications()).find(
+      (application) => application.status === 'checked-in' && application.assignedBed,
+    );
+    const assignedBed = checkedIn?.assignedBed;
+    const roomCode = assignedBed?.replace(/-B\d+$/, '') ?? null;
+    return {
+      roomCode,
+      bedCode: assignedBed ?? null,
+      roommates: [],
+    };
+  }
   return {
-    roomCode: current?.room_code ?? null,
-    bedCode: current?.bed_code ?? null,
+    roomCode: current.room_code,
+    bedCode: current.bed_code,
     roommates: roommates
-      .filter((mate) => mate.bed_code !== current?.bed_code)
+      .filter((mate) => mate.bed_code !== current.bed_code)
       .map((mate) => ({
         name: mate.full_name,
         bed: mate.bed_code,

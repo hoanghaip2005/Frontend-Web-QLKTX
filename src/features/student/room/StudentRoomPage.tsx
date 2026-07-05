@@ -101,7 +101,7 @@ export function StudentRoomPage() {
                       <StatusBadge status={isMine ? 'reserved' : bed.status} />
                     </div>
                     <p className="mt-1 text-sm text-slate-600">
-                      {isMine ? `${currentStudent.name} (bạn)` : (bed.occupant ?? 'Trống')}
+                      {isMine ? 'Bạn đang ở giường này' : (bed.occupant ?? 'Trống')}
                     </p>
                   </div>
                 );
