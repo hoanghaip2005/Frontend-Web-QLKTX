@@ -40,6 +40,41 @@ type MomoDialogState = {
   qrDataUrl: string;
 };
 
+function paymentRecordLabel(record: Record<string, unknown>) {
+  const method = String(record.method ?? record.payType ?? record.partnerCode ?? 'Giao dịch');
+  const status = String(record.status ?? record.resultCode ?? 'đã ghi nhận');
+  const amount =
+    typeof record.amount === 'number' ? `${record.amount.toLocaleString('vi-VN')}đ` : null;
+  const time = String(record.at ?? record.created_at ?? record.transTime ?? '')
+    .slice(0, 19)
+    .replace('T', ' ');
+  return {
+    title: amount ? `${method} - ${amount}` : method,
+    meta: [status, time].filter(Boolean).join(' - '),
+    note: String(record.note ?? record.message ?? record.orderId ?? ''),
+  };
+}
+
+function PaymentHistory({ records }: { records: Record<string, unknown>[] }) {
+  if (!records.length) {
+    return <p className="mt-2 text-sm text-slate-500">Chưa có giao dịch.</p>;
+  }
+  return (
+    <ol className="mt-2 space-y-2">
+      {records.map((record, index) => {
+        const item = paymentRecordLabel(record);
+        return (
+          <li key={index} className="rounded-app bg-slate-50 px-3 py-2">
+            <p className="font-medium text-slate-900">{item.title}</p>
+            <p className="text-xs text-slate-500">{item.meta}</p>
+            {item.note && <p className="mt-1 text-xs text-slate-600">{item.note}</p>}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 export function StudentInvoicesPage() {
   const [searchParams] = useSearchParams();
   const { data: invoices, loading, error, reload } = useAsyncData(fetchInvoices);
@@ -251,11 +286,7 @@ export function StudentInvoicesPage() {
               </div>
               <div className="rounded-app border border-slate-200 p-3">
                 <p className="text-xs font-medium uppercase text-slate-400">Lịch sử thanh toán</p>
-                <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-slate-600">
-                  {selectedInvoice.paymentRecords.length
-                    ? JSON.stringify(selectedInvoice.paymentRecords, null, 2)
-                    : 'Chưa có giao dịch.'}
-                </pre>
+                <PaymentHistory records={selectedInvoice.paymentRecords} />
               </div>
             </div>
           )}
