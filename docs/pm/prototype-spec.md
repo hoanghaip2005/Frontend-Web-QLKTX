@@ -23,12 +23,14 @@ The prototype must cover both Student Portal and Admin Portal, with a smaller ma
 | Figma file name | DormCare Hub - MVP Prototype |
 | Page name | MVP Prototype |
 | Desktop frame size | 1440 x 1024 |
-| Mobile frame size | 390 x 844 |
+| Mobile frame size | 390 x 844 (reference-only, xem sync note bên dưới) |
 | Main desktop role | Dormitory Staff / Admin / Student Affairs |
 | Main mobile role | Student |
 | Visual style | Clean operational SaaS, high scanability, restrained color, no decorative marketing hero. |
 | Primary accent | Practical green or blue-green for dormitory operations and successful status. |
 | Density | Dense enough for management workflows, but not cramped. |
+
+> **Sync note (2026-07-03):** Theo quyết định web-first trong `Frontend-Web-QLKTX/docs/handoff-flow-and-assignment.md` (2026-06-27), Figma prototype cho web chỉ cần desktop `1440x1024`. Các frame mobile `390x844` là tham chiếu responsive, không phải deliverable bắt buộc; React web chịu trách nhiệm responsive cho màn hình sinh viên.
 
 ## Information Architecture
 

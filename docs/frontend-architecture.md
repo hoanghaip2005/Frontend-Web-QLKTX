@@ -2,7 +2,16 @@
 
 ## Mục tiêu
 
-`Frontend-Web-QLKTX` là web frontend React cho DormCare Hub / QLKTX. Giai đoạn hiện tại chỉ dựng UI web-responsive để nhóm 7 người làm song song và demo MVP bằng mock data. Backend, Supabase, real auth, payment gateway, SIS sync và native mobile chưa triển khai trong repo này.
+`Frontend-Web-QLKTX` là web frontend React cho DormCare Hub / QLKTX. Toàn bộ màn hình MVP đã triển khai và nối với `Backend-QLKTX` REST API qua tầng repositories; chế độ dữ liệu chuyển bằng `VITE_API_MODE=mock|live` nên vẫn demo offline được bằng mock data. Supabase Auth thật, payment gateway, SIS sync và native mobile chưa triển khai trong repo này (live mode local dùng backend `DEV_AUTH_BYPASS`).
+
+Data boundary hiện tại:
+
+```text
+screen -> useAsyncData hook -> repositories (src/lib/api/repositories.ts)
+       -> datasource: mock (src/mocks/data) | http (src/lib/api/http.ts -> Backend-QLKTX)
+```
+
+DTO -> domain mapping nằm ở `src/lib/api/mappers.ts` để màn hình không thấy enum thô của backend.
 
 Architecture này đồng bộ với bộ tài liệu kỹ thuật/project-management đã copy vào `docs/pm/` từ nguồn gốc `D:\NGONGOCDANGKHOA\docs`, đặc biệt:
 
@@ -26,7 +35,7 @@ Các file trên là bản snapshot local để members không cần clone hoặc
 | Icons               | `lucide-react` only                                                        |
 | Utility class merge | `clsx`, `tailwind-merge`, `class-variance-authority`                       |
 | Headless primitives | `radix-ui`                                                                 |
-| Backend phase       | Mock-only, no Supabase/API client                                          |
+| Data access         | Repositories (`src/lib/api`), `VITE_API_MODE=mock\|live`, no Supabase client |
 
 ## shadcn Setup
 

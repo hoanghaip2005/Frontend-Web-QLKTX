@@ -21,8 +21,8 @@ For feature members, local docs in this repo are the daily working contract. The
 
 ## Non-Negotiables
 
-- Do not add Supabase, backend API clients, real auth, storage, payment, SIS sync, database migrations, service keys, or real env secrets in this phase.
-- Screens may use mock data from `src/mocks/data` and local component state only.
+- Do not add Supabase client, real auth tokens, storage, payment, SIS sync, service keys, or real env secrets in this repo. Backend REST access goes only through the shared repositories layer in `src/lib/api` (Member 1 owned).
+- Screens never call `fetch` directly. Data flows through `src/lib/api/repositories.ts`, which switches between mock data (`src/mocks/data`) and the `Backend-QLKTX` API via `VITE_API_MODE=mock|live`.
 - UI primitives must come from `shadcn` components in `src/components/ui`.
 - Icons must come from `lucide-react`. Do not add another icon pack. Do not hand-roll SVG icons unless no lucide icon fits.
 - Shared UI, route maps, root config, dependency changes, docs, and `src/components/ui` are Member 1 owned.
@@ -98,19 +98,16 @@ src/
   types            shared TypeScript types
 ```
 
-Data boundary for this phase:
+Data boundary (implemented):
 
 ```text
-screen -> mock data/local state -> UI
+screen -> useAsyncData hook -> repositories (src/lib/api/repositories.ts)
+       -> datasource: mock (src/mocks/data) | http (src/lib/api/http.ts -> Backend-QLKTX)
 ```
 
-Future backend phase boundary:
-
-```text
-screen -> feature hooks/state -> repositories -> datasource -> Supabase/API
-```
-
-Do not pre-build the future datasource layer during frontend-only work.
+- `VITE_API_MODE=mock` (default): repositories serve in-memory mock data, demo offline.
+- `VITE_API_MODE=live` + `VITE_API_URL`: repositories call the backend REST API; DTO -> domain mapping lives in `src/lib/api/mappers.ts` so screens never see raw backend enums.
+- Real Supabase Auth is still deferred; live mode identifies the active role via the backend `DEV_AUTH_BYPASS` header in local development only.
 
 ## Member Ownership
 
@@ -141,7 +138,7 @@ Do not pre-build the future datasource layer during frontend-only work.
 - Route renders a non-blank page.
 - Uses the shared layout/navigation.
 - Uses shadcn UI primitives and lucide icons.
-- Uses mock data from `src/mocks/data` or local constants inside the feature.
+- Loads data through `src/lib/api/repositories.ts` (or local constants for static copy); never calls `fetch` directly.
 - Shows default state and relevant loading, empty, error, validation, and mobile states.
 - Does not import Supabase, call `fetch` to a real API, or introduce secrets.
 - Matches MVP backlog/prototype intent in `docs/pm/` and local web docs.

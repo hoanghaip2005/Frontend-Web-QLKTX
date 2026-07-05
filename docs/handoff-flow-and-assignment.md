@@ -1,18 +1,19 @@
-# Web Handoff Flow And Assignment
+# Web Figma Handoff And Assignment
 
 | Field | Value |
 | --- | --- |
 | Project | DormCare Hub / QLKTX Web |
-| Status | Ready for member handoff |
-| Date | 2026-06-25 |
-| Scope | Frontend web MVP, mock-only phase |
+| Status | Synced for Figma-first web UI handoff |
+| Date | 2026-06-27 |
+| Scope | Figma desktop web prototype first, React web UI later, mock-only |
+| Figma file | `21WcpY1SegwWbh8zMq4nJb` - DormCare Hub MVP Prototype |
 | Primary repo | `D:\QLKTX\Frontend-Web-QLKTX` |
 
 ## Purpose
 
-Tài liệu này dùng để bàn giao công việc cho 7 member làm web UI song song. Nội dung tập trung vào kiến trúc luồng, ranh giới folder, route, user story, Figma page, API tham chiếu và tiêu chuẩn Done.
+Tài liệu này là file phân công chính cho 7 member dựng giao diện web trước trên Figma, sau đó mới tách task implement React theo folder sở hữu.
 
-Trong phase hiện tại, web frontend chỉ dựng UI responsive bằng mock data. Không nối Supabase, không gọi backend thật, không thêm service key, không tạo datasource/repository layer.
+Phase hiện tại chỉ tập trung web UI. Không dựng native mobile, không backend/API, không Supabase, không real auth, không payment, không SIS sync, không service key. Figma prototype dùng desktop web `1440x1024`; frontend repo dùng mock data/local state khi đến giai đoạn code.
 
 ## Source Of Truth
 
@@ -21,79 +22,47 @@ Trong phase hiện tại, web frontend chỉ dựng UI responsive bằng mock da
 | MVP scope, priority, sprint | `docs/pm/product-backlog.md`, `docs/pm/release-plan-fixed-date.md` |
 | Screen list, flow, sample data | `docs/pm/prototype-spec.md` |
 | Done checklist | `docs/pm/definition-of-done.md` |
-| Route/folder architecture | `docs/frontend-architecture.md` |
-| Team ownership | this file, `../AGENTS.md`, root `D:\QLKTX\TEAM_ASSIGNMENT.md` |
-| Future API contract | `D:\QLKTX\Backend-QLKTX\docs\api-map.md` |
+| Web route/folder architecture | `docs/frontend-architecture.md` |
+| Web team rules | `docs/team-work-rules.md`, `AGENTS.md` |
+| Figma assignment | this file |
 
-Nếu có mâu thuẫn khi bàn giao: ưu tiên `docs/pm` cho scope, `docs/frontend-architecture.md` cho route/folder, và code hiện tại cho pattern implement.
+Nếu có mâu thuẫn: ưu tiên `docs/pm` cho scope, `docs/frontend-architecture.md` cho route/folder, Figma file hiện tại cho visual, code hiện tại cho pattern implement.
 
-## Current Architecture
+## Current Figma Page Map
 
-```text
-src/main.tsx
-  -> AppProviders
-  -> AppRouter
-  -> RoleLayout
-  -> AppSidebar
-  -> feature page
-  -> mock data / local state
-  -> shadcn UI + Tailwind
-```
-
-Current data boundary:
-
-```text
-screen -> mock data/local state -> UI
-```
-
-Future backend boundary, chưa implement trong phase này:
-
-```text
-screen -> feature hooks/state -> repositories -> API/Supabase datasource
-```
-
-## Folder Boundary
-
-| Path | Owner | Rule |
+| Figma page | Owner | Purpose |
 | --- | --- | --- |
-| `src/app` | Member 1 | Router, providers, role layout. Feature member không tự sửa route lớn. |
-| `src/components/ui` | Member 1 | shadcn primitives only. Không overwrite nếu chưa thống nhất. |
-| `src/components/common` | Member 1 coordinates | Component dùng bởi ít nhất 2 feature. |
-| `src/components/navigation` | Member 1 | Sidebar/nav shell. |
-| `src/config`, `src/lib`, `src/styles`, `src/types` | Member 1 | Shared constants, helpers, tokens, types. |
-| `src/mocks/data` | Member 1 coordinates | Shared mock contract. Feature member đề xuất shape nếu cần. |
-| `src/features/auth` | Member 2 | Auth, role access, profile, consent. |
-| `src/features/student/dashboard`, `application`, `room` | Member 3 | Student core. |
-| `src/features/student/tickets`, `invoices`, `requests`, `notifications` | Member 4 | Student services. |
-| `src/features/staff/dashboard`, `applications`, `allocation`, `checkin_checkout` | Member 5 | Staff operations A. |
-| `src/features/staff/residents`, `maintenance`, `billing`, `tasks` | Member 6 | Staff operations B. |
-| `src/features/admin` | Member 7 | Admin, governance, reporting. |
+| `00 - Tổng quan` | Member 1 | Cover, visual tokens, app shell reference, reusable handoff notes |
+| `01 - Xác thực & Hồ sơ` | Member 2 | Login, role gate, consent, profile, auth handoff |
+| `02 - Sinh viên` | Member 3 + Member 4 | Student core + student services |
+| `03 - Nhân viên` | Member 5 + Member 6 | Staff operations A + staff operations B |
+| `04 - Quản trị` | Member 7 | Admin governance/configuration |
 
-## MVP Flow Map
+Các page cũ trước đây không còn là source cho handoff hiện tại.
+
+## Current MVP Flow Map
 
 ```mermaid
 flowchart LR
-  Login["US-001 Login / role access"]
-  Consent["US-002 Data consent"]
+  Auth["US-001 Login/RBAC + US-002 consent"]
   Apply["US-003 Student application"]
   Status["US-004 Application status"]
   Review["US-005 Staff review"]
   Ledger["US-006 Room/bed ledger"]
   Suggest["US-008 Assignment suggestion"]
-  Override["US-009 Override with reason"]
+  Override["US-009 Override reason"]
   Checkin["US-010 Check-in/out"]
   Ticket["US-011 Maintenance ticket"]
   SLA["US-012 SLA board"]
-  Confirm["US-013 Confirm or reopen"]
-  Dashboard["US-014 Operations dashboard"]
+  Confirm["US-013 Confirm/reopen"]
+  Ops["US-014 Operations dashboard"]
+  Admin["Admin RBAC/config/rules/audit"]
 
-  Login --> Consent --> Apply --> Status --> Review
-  Review --> Suggest
-  Ledger --> Suggest
-  Suggest --> Override --> Checkin --> Status
-  Status --> Ticket --> SLA --> Confirm --> Dashboard
-  Checkin --> Dashboard
-  Ledger --> Dashboard
+  Auth --> Apply --> Status --> Review
+  Review --> Ledger --> Suggest --> Override --> Checkin --> Ops
+  Status --> Ticket --> SLA --> Confirm --> Ops
+  Admin --> Ledger
+  Admin --> Suggest
 ```
 
 ## Role Route Map
@@ -111,13 +80,14 @@ flowchart LR
 
 | Item | Detail |
 | --- | --- |
-| Scope | App shell, router, layout, shadcn primitives, navigation, shared mock data, docs sync. |
-| Folders | `src/app`, `src/components`, `src/config`, `src/lib`, `src/styles`, `src/types`, `src/mocks/data`, root configs, `docs`. |
-| Figma | `00 - Design System`, `10 - Workflow Maps & Handoff`. |
-| Output | Stable routes, shared components, mock contracts, build/lint/typecheck baseline. |
-| Must avoid | Building feature UI inside another member folder unless fixing shared integration. |
+| Main scope | App shell, router, shared layout, shadcn primitives, navigation, mock data contract, docs sync |
+| Folders | `src/app`, `src/components`, `src/config`, `src/lib`, `src/styles`, `src/types`, `src/mocks/data`, root config, `docs` |
+| Figma page | `00 - Tổng quan` |
+| Figma frames | Cover, components/tokens, desktop app shell reference, route list, shared handoff notes |
+| Output | Stable visual direction, shared UI contract, route/folder map, member handoff baseline |
+| Must avoid | Building feature-specific UI inside member 2-7 folders unless coordinating shared integration |
 
-Member 1 also reviews any dependency, shared UI, route, docs, or mock-data-contract change.
+Member 1 reviews dependency, route, shared UI, docs, and mock-data-contract changes.
 
 ### Member 2 - Auth / Shared Access
 
@@ -126,139 +96,143 @@ Member 1 also reviews any dependency, shared UI, route, docs, or mock-data-contr
 | US-ID | `US-001`, `US-002` |
 | Folders | `src/features/auth` |
 | Routes | `/login`, `/profile` |
-| Figma | `01 - Auth & Shared` |
-| Screens | Login/RBAC, role gate, access denied, profile, privacy consent. |
-| Backend ref | `GET /api/auth/me`, `PATCH /api/profiles/me` |
-| Done focus | Role destination clear, no real auth client, consent action explicit, profile mock state usable. |
+| Figma page | `01 - Xác thực & Hồ sơ` |
+| Figma focus | Login, role gate, access denied, consent, profile/member state, portal entry handoff |
+| Done focus | Login stays minimal, role destination clear, consent explicit, profile mock state usable |
 
-Expected handoff: login lets reviewer enter Student, Staff, Admin portals; consent/privacy state is visible before student application entry.
+Expected handoff: reviewer can enter Student, Staff, Admin portals from auth/profile flow without extra marketing copy.
 
 ### Member 3 - Student Core
 
 | Item | Detail |
 | --- | --- |
-| US-ID | `US-003`, `US-004`, student side of `US-006` |
+| US-ID | `US-003`, `US-004`, student-facing `US-006` |
 | Folders | `src/features/student/dashboard`, `src/features/student/application`, `src/features/student/room` |
 | Routes | `/student/dashboard`, `/student/application`, `/student/room` |
-| Figma | `02 - Student Portal`, `03 - Student Application & Residency` |
-| Screens | Student dashboard, application form, application status, current room/bed, roommates, assets. |
-| Backend ref | `GET /api/dashboard/student`, `POST /api/applications`, `POST /api/applications/:id/submit`, `POST /api/applications/:id/confirm`, `GET /api/student-rooms/current`, `GET /api/student-rooms/roommates` |
-| Done focus | Form validation state, status timeline, pending/approved/rejected states, room assignment details. |
+| Figma page | `02 - Sinh viên` |
+| Figma frames | `SV 01`, `SV 02`, `SV 02A`, `SV 03`, `SV 03A`, `SV 03B`, `SV 04` |
+| Screens | Student dashboard, application form, validation error, pending/approved/rejected status, current room/bed, roommates/assets |
+| Done focus | Form validation, required evidence, status timeline, approved room `A-302`, bed `A-302-B4`, rejected edit loop |
 
-Expected handoff: student can follow application draft -> submitted -> review/status -> approved room/bed using mock data.
+Expected handoff: student can follow application draft -> submit -> pending -> approved room/bed or rejected edit.
 
 ### Member 4 - Student Services
 
 | Item | Detail |
 | --- | --- |
-| US-ID | `US-011`, student side of `US-013`; Phase 2 drafts `US-016`, `US-017`, `US-018` if needed |
+| US-ID | `US-011`, student-facing `US-013`; Phase 2 drafts `US-016`, `US-017`, `US-018` |
 | Folders | `src/features/student/tickets`, `src/features/student/invoices`, `src/features/student/requests`, `src/features/student/notifications` |
 | Routes | `/student/tickets`, `/student/invoices`, `/student/requests`, `/student/notifications` |
-| Figma | `04 - Student Services` |
-| Screens | Ticket create/list/detail, QR context ticket form, confirm/reopen ticket, invoices draft, requests, notifications. |
-| Backend ref | `GET/POST /api/tickets`, `POST /api/tickets/:id/confirm`, `GET /api/invoices`, `POST /api/invoices/:id/payments`, `GET/POST /api/requests`, `POST /api/requests/:id/submit`, `GET /api/notifications`, `POST /api/notifications/:id/read` |
-| Done focus | Ticket requires context, priority, description, photo placeholder, SLA preview, confirm/reopen state. |
+| Figma page | `02 - Sinh viên` |
+| Figma frames | `SV 05`, `SV 06`, `SV 06A`, `SV 06B`, `SV 07`, `SV 08`, `SV 09` |
+| Screens | Ticket create/list/detail, room/asset context, closed ticket, reopened ticket, requests, fee draft, notification draft |
+| Done focus | Ticket has context/priority/description/photo placeholder/SLA preview; confirm and reopen actions are clear |
 
-Expected handoff: student can create a maintenance ticket from room/equipment context and later accept or reopen the resolution.
+Expected handoff: student can create maintenance ticket, track SLA, confirm resolved, or reopen with reason. `SV 07` fees and `SV 09` notifications stay Phase 2/draft.
 
 ### Member 5 - Staff Operations A
 
 | Item | Detail |
 | --- | --- |
-| US-ID | `US-005`, `US-008`, `US-009`, `US-010`, staff side of `US-014` |
+| US-ID | `US-005`, `US-008`, `US-009`, `US-010`, staff side `US-014` |
 | Folders | `src/features/staff/dashboard`, `src/features/staff/applications`, `src/features/staff/allocation`, `src/features/staff/checkin_checkout` |
 | Routes | `/staff/dashboard`, `/staff/applications`, `/staff/allocation`, `/staff/checkin-checkout` |
-| Figma | `05 - Staff Dashboard & Application Review`, `06 - Staff Room-Bed & Allocation` |
-| Screens | Staff dashboard, review queue/detail, assignment suggestion, override modal, check-in/out checklist. |
-| Backend ref | `GET /api/dashboard/staff`, `GET /api/applications`, `POST /api/applications/:id/review`, `POST /api/applications/:id/assign`, `POST /api/applications/:id/check-in`, `POST /api/applications/:id/cancel` |
-| Done focus | Review decision has reason, suggestion has rule reasons, override requires reason, ledger state updates visually. |
+| Figma page | `03 - Nhân viên` |
+| Figma frames | `12 Tổng quan`, `13 Đăng ký Review`, `14 Phân phòng`, `15 Check-in Checkout`, `20 Duyệt đơn Chi tiết`, `21`, `22`, `NV 05A`, `NV 05B`, `NV 06A`, `NV 07A`, `NV 07B`, `NV 10A`, `NV 10B` |
+| Screens | Staff dashboard, review queue/detail, approve/reject states, ledger hold, assignment suggestion, override reason, check-in/out completion |
+| Done focus | Review decision has reason, suggestion has rule reasons, override requires reason, ledger updates visually |
 
-Expected handoff: staff can approve an application, see suggested bed with explanation, override with mandatory reason, then check student in.
+Expected handoff: staff can approve application, see suggested bed, override with audit reason, then complete check-in/out.
 
 ### Member 6 - Staff Operations B
 
 | Item | Detail |
 | --- | --- |
-| US-ID | `US-012`, staff side of `US-013`; service ops drafts |
+| US-ID | `US-012`, staff side `US-013`; service ops drafts |
 | Folders | `src/features/staff/residents`, `src/features/staff/maintenance`, `src/features/staff/billing`, `src/features/staff/tasks` |
 | Routes | `/staff/residents`, `/staff/maintenance`, `/staff/billing`, `/staff/tasks` |
-| Figma | `07 - Staff Operations` |
-| Screens | Resident search, SLA board, ticket detail, billing reconciliation draft, tasks/shifts. |
-| Backend ref | `GET /api/profiles?role=student&search=`, `GET /api/tickets`, `POST /api/tickets/:id/assign`, `POST /api/tickets/:id/status`, `POST/PATCH /api/invoices`, `POST /api/invoices/:id/reconcile`, `/api/staff/shifts`, `/api/tasks` |
-| Done focus | Ticket priority/SLA state visible, assignment/resolution actions clear, overdue ticket easy to identify. |
+| Figma page | `03 - Nhân viên` |
+| Figma frames | `16 Cư trú`, `17 Sửa chữa Ops`, `18 Đối soát`, `19 Tasks/Shifts`, `23 SLA Chi tiết`, `NV 12A`, `NV 12B`, `NV 12C` |
+| Screens | Resident search, maintenance ops board, SLA detail, classify/assign, resolved, reopened, billing/tasks draft |
+| Done focus | Ticket priority/SLA visible, assignee/due date clear, overdue easy to identify, resolve/reopen loop visible |
 
-Expected handoff: staff can triage ticket, assign assignee/due date, move status, and show waiting-student-confirm or reopened state.
+Expected handoff: staff can triage ticket, assign assignee/due date, resolve, then handle reopen. Billing and tasks stay Phase 2/draft.
 
-### Member 7 - Admin / Governance / Reporting
+### Member 7 - Admin / Governance / Configuration
 
 | Item | Detail |
 | --- | --- |
-| US-ID | admin side of `US-006`, admin side of `US-014`; optional `US-015`; Phase 2 `US-020`, `US-021` drafts |
+| US-ID | `US-001` admin RBAC, admin side `US-006`, `US-008`, `US-009`, `US-014`, optional `US-015`; Phase 2 drafts `US-019`, `US-020`, `US-021` |
 | Folders | `src/features/admin` |
 | Routes | `/admin/dashboard`, `/admin/users`, `/admin/buildings-rooms`, `/admin/allocation-rules`, `/admin/reports-audit`, `/admin/settings` |
-| Figma | `08 - Admin Governance`, `09 - Reports, Audit & Phase 2` |
-| Screens | Admin dashboard, users/RBAC, buildings/rooms/assets, allocation rules, reports/audit, settings. |
-| Backend ref | `POST/PATCH /api/buildings`, `POST/PATCH /api/rooms`, `GET /api/rooms/:id/residents`, `/api/allocation-rules`, `/api/audit-logs`, `PATCH /api/profiles/:id` |
-| Done focus | Room/bed ledger scanability, admin-only controls separated, deferred integrations visibly marked as deferred. |
+| Figma page | `04 - Quản trị` |
+| Figma frames | `20 Tổng quan`, `21 Người dùng RBAC`, `22 Buildings and Rooms`, `23 Allocation Rules`, `24 Báo cáo and Audit`, `25 System Cài đặt`, `26 Audit Chi tiết`, `27 RBAC Chi tiết`, `QT 01A`, `QT 02A`, `QT 02B`, `QT 02C`, `QT 03A`, `QT 03B`, `QT 04A`, `QT 04B`, `QT 05A`, `QT 06A`, `QT 07A` |
+| Screens | Admin dashboard, KPI drilldown, RBAC grant/deny/negative case, rooms/beds, maintenance hold, allocation rule draft/publish block, semester settings, audit reviewed, reports draft |
+| Done focus | Governance actions show reason/audit hint, admin-only config separated from staff ops, Phase 2 imports/exports disabled/draft |
 
-Expected handoff: admin can inspect buildings, rooms, beds, statuses, user roles, allocation rules, and audit/reporting placeholders.
+Expected handoff: admin can demo dashboard -> RBAC -> room/bed config -> allocation rules -> settings/audit guardrails.
 
-## Cross-Member Data Contracts
+## Figma-First Handoff Flow
 
-Use shared sample language from `docs/pm/prototype-spec.md`:
+1. Member 1 validates page names, visual tokens, app shell, route list.
+2. Member 2 completes auth flow entry and role handoff notes.
+3. Member 3 completes student core flow.
+4. Member 4 completes student services flow and marks Phase 2 screens as draft.
+5. Member 5 completes staff application/allocation/check-in flow.
+6. Member 6 completes staff resident/maintenance/SLA flow and marks Phase 2 screens as draft.
+7. Member 7 completes admin governance/configuration flow.
+8. Member 1/PM reviews end-to-end prototype coverage before React implementation starts.
+
+## Cross-Member Data Contract
 
 | Entity | Canonical sample |
 | --- | --- |
 | Student | `SV2302700162 - Pham Hoang Hai - Male - K2023 - IT` |
-| Application | `APP-2026-001 - Pending Review - Preference: Building A, quiet room` |
+| Application | `APP-204` / `APP-2026-001 - Pending Review - Preference: Building A, quiet room` |
 | Room | `A-302 - Capacity 4 - Occupied 3 - Available` |
 | Bed | `A-302-B4 - Available` |
 | Ticket | `MT-2026-011 - Fan not working - Normal - Due 48 hours` |
 | Asset QR | `QR-A302-FAN01 - Fan in Room A-302` |
 | Dashboard KPI | `Occupancy 87%`, `Pending applications 18`, `Overdue tickets 4`, `Available beds 26` |
 
-If more than one member needs the same mock object, move it to `src/mocks/data` through Member 1 coordination. Do not copy-paste divergent versions inside feature folders.
+Nếu nhiều member cần cùng một mock object khi code, đưa vào `src/mocks/data` qua Member 1. Không copy thành nhiều version khác nhau.
 
 ## Implementation Rules For Every Member
 
-1. Work only inside owned folders unless Member 1 coordinates shared changes.
-2. Use `src/components/ui` shadcn primitives and `lucide-react` icons.
-3. Keep UI operational and dense; no marketing landing pages.
-4. Include default state plus relevant loading, empty, error, validation, and mobile states.
-5. Do not add Supabase/API clients, `fetch`, Axios, secrets, env vars, or new dependencies.
-6. Do not modify route map, shared layout, shared UI, or mock contract without handoff.
-7. Every sensitive action must show reason/audit hint: approval/rejection, assignment override, status change, role change.
-8. Every dashboard KPI should link visually to a list/action.
+1. Figma trước, code sau.
+2. Chỉ làm trong page/folder sở hữu.
+3. Dùng style hiện tại: sidebar burgundy, nền hồng nhạt, card viền hồng, accent xanh/vàng.
+4. Web Figma chỉ cần desktop `1440x1024`; không thêm native/mobile frames.
+5. React phase dùng shadcn primitives và `lucide-react`.
+6. React phase dùng mock/local state only; không Supabase/API/fetch/Axios/secrets/new dependencies.
+7. Mọi action nhạy cảm phải có reason/audit hint: approve/reject, override, role grant/deny, hold, publish rule.
+8. Mọi dashboard KPI phải click hoặc dẫn được đến list/action.
+9. Phase 2 items được đánh dấu draft/disabled, không nối vào MVP chính.
 
-## Per-Task Flow
+## Definition Of Done For A Figma Flow
 
-```text
-read docs -> identify US-ID -> check Figma frame -> inspect current feature page
-  -> implement UI with mock/local state
-  -> run checks
-  -> write handoff note
-```
+| Area | Done condition |
+| --- | --- |
+| Page | Đúng page `00-04`, đúng owner |
+| Size | New frame dùng desktop web `1440x1024` |
+| Scope | Bám assigned `US-ID`, không kéo Phase 2 thành MVP |
+| Visual | Đồng bộ visual hiện tại, không đổi style lẻ |
+| Components | Có reusable board/component rõ cho từng role page |
+| States | Default, loading, empty, error, validation, approved/rejected/closed/reopened nếu liên quan |
+| Flow | Prototype links đủ nhánh chính và state branch |
+| Access | Role-specific controls không lẫn sang portal khác |
+| Sensitive action | Reason/audit hint có mặt |
+| Cleanliness | Không overlap text, không nested cards, không copy thừa |
 
-Required checks before handoff:
-
-```bash
-npm run typecheck
-npm run lint
-npm run build
-```
-
-Existing acceptable lint baseline may include React Refresh warnings from shadcn variant exports. New feature code should not add lint errors.
-
-## Member Handoff Template
+## React Handoff Template
 
 ```text
 Owner:
 US-ID:
-Jira:
 Figma page/frame:
 Docs checked:
 Routes:
-Files changed:
+Files planned/changed:
 Mock data used/added:
 States covered:
 Commands run:
@@ -267,32 +241,17 @@ Known gaps:
 Needs Member 1 sync:
 ```
 
-## Definition Of Done For A Screen
+## Current Sync Status
 
-| Area | Done condition |
-| --- | --- |
-| Render | Route opens and page is not blank. |
-| Scope | Matches assigned `US-ID` and MVP/Phase label. |
-| UI | Uses shadcn primitives, lucide icons, responsive layout. |
-| Data | Uses mock/local state only. |
-| States | Default plus required loading/empty/error/validation/mobile states. |
-| Access | Role-specific controls do not leak into unrelated portal. |
-| Sensitive action | Reason/audit hint exists where required. |
-| Dashboard | KPI connects to a visible list/action. |
-| Quality | `typecheck`, `lint`, `build` pass before merge/handoff. |
-
-## Current Baseline
-
-As of 2026-06-25:
+As of 2026-06-27:
 
 | Area | Status |
 | --- | --- |
-| App shell/router/layout | Created |
-| shadcn primitives | Installed base set |
-| Feature pages | Mostly placeholder `ModulePage` wrappers |
-| Data mode | Mock-only |
-| Frontend `typecheck` | Pass |
-| Frontend `lint` | Pass with existing shadcn Fast Refresh warnings |
-| Backend dependency state | Backend is reference target; current web phase does not depend on it |
+| Assignment file | Synced to current Figma pages `00-04` |
+| Team split | 7 members mapped to web routes, folders, and Figma frames |
+| Backend refs | Removed from active handoff; future-only |
+| Mobile/native | Removed from Figma scope |
+| Phase 2 | Kept draft/disabled, not MVP blockers |
+| Root assignment | `D:\QLKTX\TEAM_ASSIGNMENT.md` should mirror this web-first scope |
 
-Next handoff step: assign each member one owned feature slice, replace placeholder `ModulePage` with real UI inside that member's folder, then run checks and record the handoff template.
+Next handoff step: members finish/review assigned Figma frames first, then Member 1/PM approves React implementation split.

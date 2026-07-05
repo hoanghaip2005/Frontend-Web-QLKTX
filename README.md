@@ -28,8 +28,20 @@ Dev server mặc định chạy tại `http://localhost:5173`.
 - Routing: `react-router-dom`.
 - UI primitives: shadcn components in `src/components/ui`.
 - Icons: `lucide-react` only.
-- Current data mode: mock-only.
-- Backend/Supabase: deferred, not installed in this phase.
+- Data mode: `VITE_API_MODE=mock` (mặc định, demo offline) hoặc `live` (gọi `Backend-QLKTX` REST API qua `src/lib/api`).
+- Supabase Auth thật: deferred; live mode local dùng backend `DEV_AUTH_BYPASS`.
+
+## Live mode (backend integration)
+
+```bash
+# 1. Chạy backend + database (xem D:\QLKTX\Backend-QLKTX\README.md, mục Local Development)
+# 2. Tạo .env.local:
+#      VITE_API_MODE=live
+#      VITE_API_URL=http://localhost:4000
+npm run dev
+```
+
+Đăng nhập bằng role bất kỳ; vai trò được lưu ở `localStorage` và gửi tới backend qua header dev-bypass (chỉ dùng cho môi trường local).
 
 ## shadcn
 
