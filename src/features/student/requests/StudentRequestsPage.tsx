@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Plus, RefreshCw } from 'lucide-react';
+import { AlertCircle, Eye, Plus, RefreshCw } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -36,6 +36,7 @@ import {
   createStudentRequest,
   fetchStudentRequests,
   type CreateStudentRequestInput,
+  type StudentServiceRequest,
 } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
 
@@ -56,6 +57,7 @@ export function StudentRequestsPage() {
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<StudentServiceRequest | null>(null);
 
   const submit = async () => {
     if (!reason.trim()) {
@@ -125,6 +127,7 @@ export function StudentRequestsPage() {
                     <TableHead>Nội dung</TableHead>
                     <TableHead>Ngày tạo</TableHead>
                     <TableHead>Trạng thái</TableHead>
+                    <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,6 +139,17 @@ export function StudentRequestsPage() {
                       <TableCell>{request.createdAt}</TableCell>
                       <TableCell>
                         <StatusBadge status={request.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedRequest(request)}
+                        >
+                          <Eye className="h-4 w-4" aria-hidden="true" />
+                          Chi tiết
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -190,6 +204,37 @@ export function StudentRequestsPage() {
               {saving ? 'Đang gửi...' : 'Gửi yêu cầu'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedRequest !== null} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chi tiết yêu cầu {selectedRequest?.code}</DialogTitle>
+            <DialogDescription>Trạng thái xử lý yêu cầu sinh viên.</DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="grid gap-3 text-sm">
+              <div className="flex items-center justify-between rounded-app bg-slate-50 px-3 py-2">
+                <span className="text-slate-500">Trạng thái</span>
+                <StatusBadge status={selectedRequest.status} />
+              </div>
+              {[
+                ['Loại yêu cầu', selectedRequest.type],
+                ['Ngày tạo', selectedRequest.createdAt],
+                ['Mã backend', selectedRequest.backendId ?? '-'],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">{label}</span>
+                  <span className="text-right font-medium text-slate-900">{value}</span>
+                </div>
+              ))}
+              <div className="rounded-app border border-slate-200 p-3">
+                <p className="text-xs font-medium uppercase text-slate-400">Nội dung</p>
+                <p className="mt-2 text-slate-700">{selectedRequest.detail}</p>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

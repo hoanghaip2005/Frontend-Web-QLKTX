@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { AlertCircle, CheckCircle2, CreditCard, ExternalLink, Receipt } from 'lucide-react';
+import { AlertCircle, CheckCircle2, CreditCard, ExternalLink, Eye, Receipt } from 'lucide-react';
 import { useState } from 'react';
 
 import { PageHeader } from '@/components/common/PageHeader';
@@ -46,6 +46,7 @@ export function StudentInvoicesPage() {
   const [payingCode, setPayingCode] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [momoDialog, setMomoDialog] = useState<MomoDialogState | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<BillingInvoice | null>(null);
 
   const paymentResult = searchParams.get('payment');
 
@@ -78,13 +79,17 @@ export function StudentInvoicesPage() {
       {paymentResult === 'success' && (
         <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
           <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-          <AlertDescription>Thanh toán đã ghi nhận. Trạng thái hóa đơn sẽ cập nhật sau khi MoMo xác nhận.</AlertDescription>
+          <AlertDescription>
+            Thanh toán đã ghi nhận. Trạng thái hóa đơn sẽ cập nhật sau khi MoMo xác nhận.
+          </AlertDescription>
         </Alert>
       )}
       {paymentResult === 'failed' && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" aria-hidden="true" />
-          <AlertDescription>Giao dịch chưa hoàn tất. Bạn có thể thử lại hoặc liên hệ văn phòng KTX.</AlertDescription>
+          <AlertDescription>
+            Giao dịch chưa hoàn tất. Bạn có thể thử lại hoặc liên hệ văn phòng KTX.
+          </AlertDescription>
         </Alert>
       )}
       {(error || actionError) && (
@@ -105,7 +110,10 @@ export function StudentInvoicesPage() {
           {loading ? (
             <LoadingState />
           ) : !invoices?.length ? (
-            <EmptyState title="Chưa có hóa đơn" description="Các khoản phí sẽ hiển thị khi KTX phát hành." />
+            <EmptyState
+              title="Chưa có hóa đơn"
+              description="Các khoản phí sẽ hiển thị khi KTX phát hành."
+            />
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -117,7 +125,7 @@ export function StudentInvoicesPage() {
                     <TableHead>Còn lại</TableHead>
                     <TableHead>Hạn nộp</TableHead>
                     <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Thanh toán</TableHead>
+                    <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -132,20 +140,31 @@ export function StudentInvoicesPage() {
                         <StatusBadge status={invoice.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={invoice.status === 'paid' ? 'secondary' : 'default'}
-                          disabled={invoice.status === 'paid' || payingCode === invoice.code}
-                          onClick={() => void payWithMomo(invoice)}
-                        >
-                          <CreditCard className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                          {invoice.status === 'paid'
-                            ? 'Đã thanh toán'
-                            : payingCode === invoice.code
-                              ? 'Đang tạo QR...'
-                              : 'Thanh toán MoMo'}
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedInvoice(invoice)}
+                          >
+                            <Eye className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                            Chi tiết
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={invoice.status === 'paid' ? 'secondary' : 'default'}
+                            disabled={invoice.status === 'paid' || payingCode === invoice.code}
+                            onClick={() => void payWithMomo(invoice)}
+                          >
+                            <CreditCard className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                            {invoice.status === 'paid'
+                              ? 'Đã thanh toán'
+                              : payingCode === invoice.code
+                                ? 'Đang tạo QR...'
+                                : 'MoMo'}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -155,7 +174,10 @@ export function StudentInvoicesPage() {
           )}
           <div className="mt-4 flex items-start gap-2 rounded-app bg-slate-50 px-3 py-2 text-xs text-slate-500">
             <Receipt className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-            <p>Giao dịch MoMo UAT dùng cho kiểm thử. Hóa đơn chỉ được chuyển sang đã thanh toán khi cổng thanh toán gửi xác nhận hợp lệ.</p>
+            <p>
+              Giao dịch MoMo UAT dùng cho kiểm thử. Hóa đơn chỉ được chuyển sang đã thanh toán khi
+              cổng thanh toán gửi xác nhận hợp lệ.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -199,6 +221,44 @@ export function StudentInvoicesPage() {
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedInvoice !== null} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chi tiết hóa đơn {selectedInvoice?.code}</DialogTitle>
+            <DialogDescription>Thông tin thanh toán và đối soát từ backend.</DialogDescription>
+          </DialogHeader>
+          {selectedInvoice && (
+            <div className="grid gap-3 text-sm">
+              {[
+                ['Kỳ phí', selectedInvoice.period],
+                ['Tổng tiền', selectedInvoice.amount],
+                ['Đã thu', selectedInvoice.paidAmount],
+                ['Còn lại', selectedInvoice.balance],
+                ['Hạn nộp', selectedInvoice.due],
+                ['Mã backend', selectedInvoice.backendId ?? '-'],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">{label}</span>
+                  <span className="text-right font-medium text-slate-900">{value}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between rounded-app bg-slate-50 px-3 py-2">
+                <span className="text-slate-500">Trạng thái</span>
+                <StatusBadge status={selectedInvoice.status} />
+              </div>
+              <div className="rounded-app border border-slate-200 p-3">
+                <p className="text-xs font-medium uppercase text-slate-400">Lịch sử thanh toán</p>
+                <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-slate-600">
+                  {selectedInvoice.paymentRecords.length
+                    ? JSON.stringify(selectedInvoice.paymentRecords, null, 2)
+                    : 'Chưa có giao dịch.'}
+                </pre>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

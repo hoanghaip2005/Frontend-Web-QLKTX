@@ -1,12 +1,21 @@
+import { useState } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { fetchNotifications, markAllNotificationsRead } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
+import type { StudentNotification } from '@/mocks/data/dormData';
 
 const kindLabel: Record<string, string> = {
   application: 'Hồ sơ',
@@ -18,6 +27,7 @@ const kindLabel: Record<string, string> = {
 
 export function StudentNotificationsPage() {
   const { data, loading, reload } = useAsyncData(fetchNotifications);
+  const [selectedNotification, setSelectedNotification] = useState<StudentNotification | null>(null);
   const items = data ?? [];
 
   const markAllRead = () => {
@@ -67,12 +77,50 @@ export function StudentNotificationsPage() {
                   </div>
                   <p className="mt-1 text-sm text-slate-600">{item.detail}</p>
                   <p className="mt-1 text-xs text-slate-400">{item.at}</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 px-0"
+                    onClick={() => setSelectedNotification(item)}
+                  >
+                    Xem chi tiết
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog
+        open={selectedNotification !== null}
+        onOpenChange={(open) => !open && setSelectedNotification(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedNotification?.title}</DialogTitle>
+            <DialogDescription>
+              {selectedNotification
+                ? `${kindLabel[selectedNotification.kind]} - ${selectedNotification.at}`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedNotification && (
+            <div className="space-y-3 text-sm">
+              <p className="rounded-app border border-slate-200 p-3 text-slate-700">
+                {selectedNotification.detail}
+              </p>
+              <div className="flex justify-between rounded-app bg-slate-50 px-3 py-2">
+                <span className="text-slate-500">Trạng thái</span>
+                <span className="font-medium text-slate-900">
+                  {selectedNotification.read ? 'Đã đọc' : 'Chưa đọc'}
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

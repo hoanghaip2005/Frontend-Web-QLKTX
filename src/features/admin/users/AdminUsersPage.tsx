@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, ShieldCheck, UserPlus } from 'lucide-react';
+import { Eye, Lock, ShieldCheck, UserPlus } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -48,6 +48,7 @@ const rolePermissions = [
 export function AdminUsersPage() {
   const { data: users, loading, error, reload } = useAsyncData(fetchSystemUsers);
   const [locking, setLocking] = useState<SystemUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [lockReason, setLockReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export function AdminUsersPage() {
     <div className="space-y-6">
       <PageHeader
         title="Người dùng & RBAC"
-        description="Tài khoản, role và khóa truy cập — mọi thay đổi được ghi audit."
+        description="Tài khoản, role và khóa truy cập. Mọi thay đổi được ghi audit."
         badges={['US-001']}
         actions={
           <Button type="button" variant="secondary" disabled>
@@ -121,15 +122,26 @@ export function AdminUsersPage() {
                       </TableCell>
                       <TableCell>{user.lastActive}</TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setLocking(user)}
-                        >
-                          <Lock className="h-4 w-4" aria-hidden="true" />
-                          {user.status === 'locked' ? 'Mở khóa' : 'Khóa'}
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedUser(user)}
+                          >
+                            <Eye className="h-4 w-4" aria-hidden="true" />
+                            Chi tiết
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setLocking(user)}
+                          >
+                            <Lock className="h-4 w-4" aria-hidden="true" />
+                            {user.status === 'locked' ? 'Mở khóa' : 'Khóa'}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -213,6 +225,34 @@ export function AdminUsersPage() {
               {saving ? 'Đang lưu...' : 'Xác nhận'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedUser !== null} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedUser?.name}</DialogTitle>
+            <DialogDescription>Thông tin tài khoản và role hiện tại.</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="grid gap-3 text-sm">
+              {[
+                ['Email', selectedUser.email],
+                ['Role', roleLabel[selectedUser.role]],
+                ['Hoạt động gần nhất', selectedUser.lastActive],
+                ['Mã backend', selectedUser.backendId ?? '-'],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">{label}</span>
+                  <span className="text-right font-medium text-slate-900">{value}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between rounded-app bg-slate-50 px-3 py-2">
+                <span className="text-slate-500">Trạng thái</span>
+                <StatusBadge status={selectedUser.status} />
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

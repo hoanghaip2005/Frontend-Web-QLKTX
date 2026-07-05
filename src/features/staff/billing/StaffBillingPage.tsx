@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 import { PageHeader } from '@/components/common/PageHeader';
@@ -6,6 +6,13 @@ import { StatusBadge } from '@/components/common/StatusBadge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import {
@@ -23,6 +30,7 @@ export function StaffBillingPage() {
   const { data: invoices, loading, error, reload } = useAsyncData(fetchInvoices);
   const [savingCode, setSavingCode] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<BillingInvoice | null>(null);
 
   const markPaid = async (invoice: BillingInvoice) => {
     setActionError(null);
@@ -97,20 +105,31 @@ export function StaffBillingPage() {
                         <StatusBadge status={invoice.status} />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          disabled={invoice.status === 'paid' || savingCode === invoice.code}
-                          onClick={() => void markPaid(invoice)}
-                        >
-                          <CheckCircle2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                          {invoice.status === 'paid'
-                            ? 'Đã xong'
-                            : savingCode === invoice.code
-                              ? 'Đang lưu...'
-                              : 'Xác nhận thu'}
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedInvoice(invoice)}
+                          >
+                            <Eye className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                            Chi tiết
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={invoice.status === 'paid' || savingCode === invoice.code}
+                            onClick={() => void markPaid(invoice)}
+                          >
+                            <CheckCircle2 className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                            {invoice.status === 'paid'
+                              ? 'Đã xong'
+                              : savingCode === invoice.code
+                                ? 'Đang lưu...'
+                                : 'Xác nhận thu'}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -120,6 +139,42 @@ export function StaffBillingPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={selectedInvoice !== null} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chi tiết hóa đơn {selectedInvoice?.code}</DialogTitle>
+            <DialogDescription>Thông tin sinh viên, số tiền và lịch sử đối soát.</DialogDescription>
+          </DialogHeader>
+          {selectedInvoice && (
+            <div className="grid gap-3 text-sm">
+              {[
+                ['Sinh viên', selectedInvoice.studentName ?? '-'],
+                ['MSSV', selectedInvoice.studentCode ?? '-'],
+                ['Kỳ phí', selectedInvoice.period],
+                ['Tổng tiền', selectedInvoice.amount],
+                ['Đã thu', selectedInvoice.paidAmount],
+                ['Còn lại', selectedInvoice.balance],
+                ['Hạn nộp', selectedInvoice.due],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">{label}</span>
+                  <span className="text-right font-medium text-slate-900">{value}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-between rounded-app bg-slate-50 px-3 py-2">
+                <span className="text-slate-500">Trạng thái</span>
+                <StatusBadge status={selectedInvoice.status} />
+              </div>
+              <pre className="max-h-40 overflow-auto rounded-app border border-slate-200 p-3 text-xs text-slate-600">
+                {selectedInvoice.paymentRecords.length
+                  ? JSON.stringify(selectedInvoice.paymentRecords, null, 2)
+                  : 'Chưa có giao dịch.'}
+              </pre>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

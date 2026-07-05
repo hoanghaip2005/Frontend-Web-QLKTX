@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { Download, Search, ShieldCheck } from 'lucide-react';
+import { Download, Eye, Search, ShieldCheck } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -18,11 +25,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { fetchAdminDashboard, fetchAuditLogs } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
+import type { AuditEntry } from '@/mocks/data/dormData';
 
 export function AdminReportsAuditPage() {
   const { data: auditRows, loading } = useAsyncData(fetchAuditLogs);
   const { data: dashboard } = useAsyncData(fetchAdminDashboard);
   const [query, setQuery] = useState('');
+  const [selectedAudit, setSelectedAudit] = useState<AuditEntry | null>(null);
 
   const filtered = (auditRows ?? []).filter(
     (entry) =>
@@ -99,6 +108,7 @@ export function AdminReportsAuditPage() {
                         <TableHead>Hành động</TableHead>
                         <TableHead>Đối tượng</TableHead>
                         <TableHead>Lý do</TableHead>
+                        <TableHead className="text-right">Thao tác</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -110,6 +120,17 @@ export function AdminReportsAuditPage() {
                           <TableCell>{entry.target}</TableCell>
                           <TableCell className="max-w-sm text-sm text-slate-600">
                             {entry.reason}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedAudit(entry)}
+                            >
+                              <Eye className="h-4 w-4" aria-hidden="true" />
+                              Chi tiết
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -161,6 +182,33 @@ export function AdminReportsAuditPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={selectedAudit !== null} onOpenChange={(open) => !open && setSelectedAudit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedAudit?.action}</DialogTitle>
+            <DialogDescription>Chi tiết bản ghi audit.</DialogDescription>
+          </DialogHeader>
+          {selectedAudit && (
+            <div className="grid gap-3 text-sm">
+              {[
+                ['Thời điểm', selectedAudit.at],
+                ['Người thao tác', selectedAudit.actor],
+                ['Đối tượng', selectedAudit.target],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                  <span className="text-slate-500">{label}</span>
+                  <span className="text-right font-medium text-slate-900">{value}</span>
+                </div>
+              ))}
+              <div className="rounded-app border border-slate-200 p-3">
+                <p className="text-xs font-medium uppercase text-slate-400">Lý do / metadata</p>
+                <p className="mt-2 text-slate-700">{selectedAudit.reason}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
