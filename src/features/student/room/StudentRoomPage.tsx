@@ -1,12 +1,10 @@
-import { Link } from 'react-router-dom';
-import { BedDouble, QrCode, Users, Wrench } from 'lucide-react';
+import { useState } from 'react';
+import { BedDouble, ClipboardCheck, DoorOpen, Home, PackageCheck, UsersRound } from 'lucide-react';
 
-import { PageHeader } from '@/components/common/PageHeader';
-import { StatusBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { EmptyState } from '@/components/ui/empty-state';
-import { LoadingState } from '@/components/ui/loading-state';
+import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   Table,
   TableBody,
@@ -15,180 +13,294 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { fetchCurrentRoom, fetchRooms } from '@/lib/api/repositories';
-import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import { currentStudent } from '@/mocks/data/dormData';
+import {
+  StudentPageShell,
+  StudentSectionCard,
+  StudentStatePanel,
+  StudentStateTabs,
+  StudentStatusPill,
+  StudentTimeline,
+} from '@/features/student/dashboard/components/StudentCoreDesign';
 
-const roomAssets = [
-  { id: 'QR-A302-FAN01', name: 'Quạt trần', condition: 'Đang báo sửa' },
-  { id: 'QR-A302-AC01', name: 'Điều hòa', condition: 'Tốt' },
-  { id: 'QR-A302-DESK01', name: 'Bàn học x4', condition: 'Tốt' },
-  { id: 'QR-A302-LOCK01', name: 'Khóa cửa', condition: 'Tốt' },
+type DemoState = 'data' | 'loading' | 'empty' | 'error';
+
+type Roommate = {
+  id: string;
+  name: string;
+  bed: string;
+  major: string;
+  status: 'Đã check-in' | 'Chờ check-in' | 'Tạm vắng';
+};
+
+type Asset = {
+  id: string;
+  name: string;
+  condition: 'Tốt' | 'Cần theo dõi' | 'Báo sửa chữa';
+  lastCheck: string;
+  note: string;
+};
+
+const roommates: Roommate[] = [
+  { id: 'SV2302700188', name: 'Tran Minh Anh', bed: 'B1', major: 'Marketing', status: 'Đã check-in' },
+  { id: 'SV2302700199', name: 'Le Bao Chau', bed: 'B2', major: 'Thiết kế đồ họa', status: 'Chờ check-in' },
+  { id: 'SV2302700108', name: 'Nguyen Gia Huy', bed: 'B3', major: 'Công nghệ thông tin', status: 'Tạm vắng' },
+  { id: 'SV2302700118', name: 'Trần Mộng Tuyền', bed: 'B4', major: 'Công nghệ thông tin', status: 'Chờ check-in' },
 ];
 
+const assets: Asset[] = [
+  {
+    id: 'A302-FAN01',
+    name: 'Quạt trần',
+    condition: 'Cần theo dõi',
+    lastCheck: '28 Jun',
+    note: 'Có ticket WO-883 về tiếng ồn, staff đang xử lý SLA.',
+  },
+  {
+    id: 'A302-DESK04',
+    name: 'Bàn học B4',
+    condition: 'Tốt',
+    lastCheck: '25 Jun',
+    note: 'Đã kiểm kê, không có hư hỏng.',
+  },
+  {
+    id: 'A302-WIN02',
+    name: 'Chốt cửa sổ',
+    condition: 'Báo sửa chữa',
+    lastCheck: '29 Jun',
+    note: 'Đã lên lịch kỹ thuật kiểm tra chốt cửa sổ.',
+  },
+  {
+    id: 'A302-LIGHT',
+    name: 'Đèn phòng',
+    condition: 'Tốt',
+    lastCheck: '27 Jun',
+    note: 'Ticket WO-870 đã nghiệm thu.',
+  },
+];
+
+const checkinItems = [
+  { title: 'Xác nhận phòng/giường', done: true },
+  { title: 'Kiểm kê tài sản', done: true },
+  { title: 'Xem nội quy cư trú', done: true },
+  { title: 'Ký biên bản check-in', done: false },
+  { title: 'Nhận thẻ phòng', done: false },
+];
+
+const roommateTone = {
+  'Đã check-in': 'green',
+  'Chờ check-in': 'amber',
+  'Tạm vắng': 'slate',
+} as const;
+
+const assetTone = {
+  Tốt: 'green',
+  'Cần theo dõi': 'amber',
+  'Báo sửa chữa': 'red',
+} as const;
+
 export function StudentRoomPage() {
-  const { data: current, loading } = useAsyncData(fetchCurrentRoom);
-  const { data: allRooms } = useAsyncData(fetchRooms);
-
-  if (loading) return <LoadingState />;
-  if (!current?.roomCode) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Phòng hiện tại"
-          description="Bạn chưa được phân phòng. Sau khi hồ sơ được duyệt và phân giường, thông tin phòng sẽ hiển thị tại đây."
-          badges={['US-006']}
-        />
-        <EmptyState
-          title="Chưa có phòng"
-          description="Nộp hồ sơ đăng ký ở KTX và chờ ban quản lý phân giường."
-        />
-      </div>
-    );
-  }
-
-  const myRoom = (allRooms ?? []).find((room) => room.id === current.roomCode) ?? null;
-  const myBedId = current.bedCode?.startsWith(current.roomCode)
-    ? current.bedCode
-    : `${current.roomCode}-${current.bedCode}`;
+  const [demoState, setDemoState] = useState<DemoState>('data');
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={`Phòng hiện tại: ${current.roomCode}`}
-        description={
-          myRoom
-            ? `${myRoom.building} - Tầng ${myRoom.floor} - Sức chứa ${myRoom.capacity} - Giường của bạn: ${myBedId}.`
-            : `Giường của bạn: ${myBedId}.`
-        }
-        badges={['US-006']}
-        actions={
-          <Button asChild variant="secondary">
-            <Link to="/student/tickets">
-              <Wrench className="h-4 w-4" aria-hidden="true" />
-              Báo sửa chữa phòng này
-            </Link>
-          </Button>
-        }
-      />
-
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <BedDouble className="h-4 w-4 text-brand-600" aria-hidden="true" />
-              <h2 className="text-base font-semibold text-slate-950">Sơ đồ giường</h2>
-            </div>
-            <p className="mt-1 text-sm text-slate-500">
-              {myRoom ? `${myRoom.occupied}/${myRoom.capacity} giường đang sử dụng.` : ''}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(myRoom?.beds ?? []).map((bed) => {
-                const isMine = bed.id === myBedId;
-                return (
-                  <div
-                    key={bed.id}
-                    className={
-                      isMine
-                        ? 'rounded-app border-2 border-brand-600 bg-brand-50 p-3'
-                        : 'rounded-app border border-slate-200 p-3'
-                    }
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-900">{bed.id}</p>
-                      <StatusBadge status={isMine ? 'reserved' : bed.status} />
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {isMine ? `${currentStudent.name} (bạn)` : (bed.occupant ?? 'Trống')}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-brand-600" aria-hidden="true" />
-              <h2 className="text-base font-semibold text-slate-950">Bạn cùng phòng</h2>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {current.roommates.length === 0 && (
-              <p className="text-sm text-slate-500">Chưa có bạn cùng phòng.</p>
-            )}
-            {current.roommates.map((mate) => (
-              <div
-                key={mate.bed}
-                className="flex items-center justify-between gap-2 rounded-app border border-slate-200 p-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{mate.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {mate.bed}
-                    {mate.cohort ? ` - ${mate.cohort}` : ''}
-                  </p>
-                </div>
-                <StatusBadge status="checked-in" />
-              </div>
-            ))}
-            <p className="text-xs text-slate-500">
-              Thông tin liên hệ bạn cùng phòng chỉ hiển thị sau khi cả hai đồng ý chia sẻ (quy tắc
-              bảo vệ dữ liệu cá nhân).
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <QrCode className="h-4 w-4 text-brand-600" aria-hidden="true" />
-            <h2 className="text-base font-semibold text-slate-950">Tài sản trong phòng</h2>
+    <StudentPageShell
+      eyebrow="SV / Phòng hiện tại"
+      title="Phòng và giường hiện tại"
+      description="Student side của US-006: hiển thị room/bed ledger, roommate list, asset condition và checklist check-in bằng mock data."
+      primaryAction="Xác nhận phòng"
+      secondaryAction="Báo sửa chữa"
+      metrics={[
+        { label: 'Room', value: 'A-302', hint: 'Building A · Floor 3', tone: 'rose' },
+        { label: 'Bed', value: 'B4', hint: 'Assigned to SV2302700118', tone: 'cyan' },
+        { label: 'Roommates', value: '4/4', hint: 'Đủ số lượng', tone: 'green' },
+        { label: 'Check-in', value: '60%', hint: '3/5 bước hoàn tất', tone: 'amber' },
+      ]}
+    >
+      <Card className="border-[#f2cdd4] bg-white shadow-[0px_4px_14px_-4px_rgba(16,24,40,0.08)]">
+        <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-bold text-[#101828]">Room ledger state</p>
+            <p className="text-xs text-[#667085]">Data / Loading / Empty / Error để reviewer kiểm thử nhanh.</p>
           </div>
-          <p className="mt-1 text-sm text-slate-500">
-            Quét QR trên tài sản để báo sửa chữa đúng thiết bị.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã QR</TableHead>
-                  <TableHead>Tài sản</TableHead>
-                  <TableHead>Tình trạng</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {roomAssets.map((asset) => (
-                  <TableRow key={asset.id}>
-                    <TableCell className="font-mono text-xs">{asset.id}</TableCell>
-                    <TableCell>{asset.name}</TableCell>
-                    <TableCell>
-                      <StatusBadge
-                        status={asset.condition === 'Tốt' ? 'available' : 'in-progress'}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to="/student/tickets" aria-label={`Báo sửa ${asset.name}`}>
-                          Báo sửa
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <StudentStateTabs value={demoState} onChange={setDemoState} />
         </CardContent>
       </Card>
-    </div>
+
+      <StudentStatePanel
+        state={demoState}
+        emptyTitle="Chưa có phòng được phân"
+        emptyDescription="Khi hồ sơ chuyển sang Approved, thông tin phòng/giường sẽ xuất hiện ở màn hình này."
+      >
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
+            <StudentSectionCard title="Current assignment" description="Thông tin phòng/giường được phân sau khi hồ sơ approved.">
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  { label: 'Building', value: 'Building A', icon: Home },
+                  { label: 'Room', value: 'A-302', icon: DoorOpen },
+                  { label: 'Bed', value: 'B4', icon: BedDouble },
+                ].map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <div key={item.label} className="rounded-xl border border-[#f2cdd4] bg-[#fff9fb] p-4">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#667085]">
+                        <Icon className="h-4 w-4 text-[#a72c3a]" aria-hidden="true" />
+                        {item.label}
+                      </div>
+                      <p className="mt-2 text-lg font-bold text-[#101828]">{item.value}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="rounded-xl border border-[#f2cdd4] bg-white p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-[#101828]">Mức độ sẵn sàng check-in</p>
+                    <p className="mt-1 text-sm text-[#667085]">3/5 bước đã hoàn tất, còn ký biên bản và nhận thẻ phòng.</p>
+                  </div>
+                  <StudentStatusPill tone="amber">60%</StudentStatusPill>
+                </div>
+                <Progress value={60} className="mt-4 bg-[#fff1f5] [&_[data-slot=progress-indicator]]:bg-[#a72c3a]" />
+              </div>
+            </StudentSectionCard>
+
+            <StudentSectionCard title="Roommates" description="Danh sách người ở cùng phòng để sinh viên nắm ngữ cảnh cư trú.">
+              <Table>
+                <TableHeader className="bg-[#fff9fb]">
+                  <TableRow className="border-[#f2cdd4] hover:bg-[#fff9fb]">
+                    <TableHead className="text-xs font-semibold text-[#667085]">Sinh viên</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#667085]">Bed</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#667085]">Ngành</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#667085]">Trạng thái</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {roommates.map((roommate) => (
+                    <TableRow key={roommate.id} className="border-[#f2cdd4] hover:bg-[#fff9fb]">
+                      <TableCell>
+                        <div className="font-semibold text-[#101828]">{roommate.name}</div>
+                        <div className="mt-1 text-xs text-[#667085]">{roommate.id}</div>
+                      </TableCell>
+                      <TableCell className="text-[#667085]">{roommate.bed}</TableCell>
+                      <TableCell className="text-[#667085]">{roommate.major}</TableCell>
+                      <TableCell>
+                        <StudentStatusPill tone={roommateTone[roommate.status]}>{roommate.status}</StudentStatusPill>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </StudentSectionCard>
+
+            <StudentSectionCard title="Room assets" description="Sinh viên xem tài sản trong phòng và mở chi tiết để tạo ticket sau này.">
+              <Table>
+                <TableHeader className="bg-[#fff9fb]">
+                  <TableRow className="border-[#f2cdd4] hover:bg-[#fff9fb]">
+                    <TableHead className="text-xs font-semibold text-[#667085]">Tài sản</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#667085]">Tình trạng</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#667085]">Lần kiểm tra</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#667085]">Thao tác</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {assets.map((asset) => (
+                    <TableRow key={asset.id} className="border-[#f2cdd4] hover:bg-[#fff9fb]">
+                      <TableCell>
+                        <div className="font-semibold text-[#101828]">{asset.name}</div>
+                        <div className="mt-1 text-xs text-[#667085]">{asset.id}</div>
+                      </TableCell>
+                      <TableCell>
+                        <StudentStatusPill tone={assetTone[asset.condition]}>{asset.condition}</StudentStatusPill>
+                      </TableCell>
+                      <TableCell className="text-[#667085]">{asset.lastCheck}</TableCell>
+                      <TableCell>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="text-[#667085] hover:bg-[#fff1f5] hover:text-[#a72c3a]"
+                          onClick={() => setSelectedAsset(asset)}
+                        >
+                          Mở
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </StudentSectionCard>
+          </div>
+
+          <div className="space-y-4">
+            <StudentSectionCard title="Check-in checklist" description="Sinh viên biết cần làm gì trước khi nhận phòng.">
+              <StudentTimeline
+                items={checkinItems.map((item) => ({
+                  title: item.title,
+                  description: item.done ? 'Đã hoàn tất trong mock flow.' : 'Còn cần thực hiện trước ngày check-in.',
+                  done: item.done,
+                  tone: item.done ? 'green' : 'amber',
+                }))}
+              />
+            </StudentSectionCard>
+
+            <StudentSectionCard title="Room context">
+              <div className="space-y-3">
+                <div className="rounded-xl border border-[#f2cdd4] bg-[#fff9fb] p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#101828]">
+                    <UsersRound className="h-4 w-4 text-[#a72c3a]" aria-hidden="true" />
+                    Quy mô phòng
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[#667085]">Phòng 4 giường, 1 phòng tắm chung, gần khu tự học tầng 3.</p>
+                </div>
+                <div className="rounded-xl border border-[#f2cdd4] bg-[#fff9fb] p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#101828]">
+                    <ClipboardCheck className="h-4 w-4 text-[#087e82]" aria-hidden="true" />
+                    Ghi chú phân phòng
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[#667085]">
+                    Match theo ưu tiên tòa A, lịch học tối và nhóm ngành. Nếu cần đổi phòng, gửi request sau check-in.
+                  </p>
+                </div>
+              </div>
+            </StudentSectionCard>
+          </div>
+        </div>
+      </StudentStatePanel>
+
+      <Sheet open={Boolean(selectedAsset)} onOpenChange={(open) => !open && setSelectedAsset(null)}>
+        <SheetContent className="border-[#f2cdd4] sm:max-w-md">
+          {selectedAsset && (
+            <>
+              <SheetHeader>
+                <SheetTitle>{selectedAsset.name}</SheetTitle>
+                <SheetDescription>{selectedAsset.id} · {selectedAsset.lastCheck}</SheetDescription>
+              </SheetHeader>
+              <div className="space-y-4 px-4 pb-4">
+                <div className="rounded-xl border border-[#f2cdd4] bg-[#fff9fb] p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[#101828]">
+                    <PackageCheck className="h-4 w-4 text-[#a72c3a]" aria-hidden="true" />
+                    Tình trạng tài sản
+                  </div>
+                  <div className="mt-3">
+                    <StudentStatusPill tone={assetTone[selectedAsset.condition]}>{selectedAsset.condition}</StudentStatusPill>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[#f2cdd4] bg-white p-4">
+                  <p className="text-sm font-semibold text-[#101828]">Ghi chú</p>
+                  <p className="mt-2 text-sm leading-6 text-[#667085]">{selectedAsset.note}</p>
+                </div>
+
+                <Button type="button" className="w-full bg-[#a72c3a] text-white hover:bg-[#8f2633]">
+                  Tạo ticket sửa chữa
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+    </StudentPageShell>
   );
 }

@@ -1,389 +1,392 @@
-import { useState } from 'react';
-import { CheckCircle2, CircleDashed, FileUp, ShieldCheck, XCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AlertTriangle, ClipboardCheck, FileText, SendHorizontal } from 'lucide-react';
 
-import { PageHeader } from '@/components/common/PageHeader';
-import { StatusBadge } from '@/components/common/StatusBadge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { LoadingState } from '@/components/ui/loading-state';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  confirmAssignment,
-  createAndSubmitApplication,
-  fetchApplications,
-} from '@/lib/api/repositories';
-import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import { currentStudent } from '@/mocks/data/dormData';
-import type { Application, ApplicationStatus } from '@/mocks/data/dormData';
+  StudentPageShell,
+  StudentSectionCard,
+  StudentStatePanel,
+  StudentStateTabs,
+  StudentStatusPill,
+  StudentTimeline,
+} from '@/features/student/dashboard/components/StudentCoreDesign';
 
-type Step = 'consent' | 'form';
+type DemoState = 'data' | 'loading' | 'empty' | 'error';
+type ApplicationStage = 'draft' | 'submitted' | 'review' | 'approved' | 'rejected';
 
-// Progress milestones per status for the timeline view.
-const statusRank: Partial<Record<ApplicationStatus, number>> = {
-  pending: 1,
-  reviewing: 1,
-  approved: 2,
-  suggested: 3,
-  'waiting-checkin': 4,
-  'checked-in': 5,
+type ApplicationForm = {
+  fullName: string;
+  studentId: string;
+  major: string;
+  phone: string;
+  guardian: string;
+  priority: string;
+  address: string;
+  note: string;
+  confirmAccuracy: boolean;
+  confirmPolicy: boolean;
 };
 
-function ApplicationStatusView({
-  application,
-  onReload,
-}: {
-  application: Application;
-  onReload: () => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const rank = statusRank[application.status] ?? 0;
-  const failed = application.status === 'rejected' || application.status === 'needs-update';
+type ValidationErrors = Partial<Record<keyof ApplicationForm, string>>;
 
-  const steps = [
-    { label: 'Nộp hồ sơ', done: true },
-    { label: 'Xét duyệt minh chứng', done: rank >= 2 },
-    { label: 'Gợi ý phòng/giường', done: rank >= 3 },
-    { label: 'Bạn xác nhận giường', done: rank >= 4 },
-    { label: 'Check-in nhận phòng', done: rank >= 5 },
-  ];
+const initialForm: ApplicationForm = {
+  fullName: 'Trần Mộng Tuyền',
+  studentId: 'SV2302700118',
+  major: 'Công nghệ thông tin',
+  phone: '0909 123 456',
+  guardian: 'Trần Văn A · 0912 000 111',
+  priority: 'Gần khu tự học, phòng yên tĩnh, ưu tiên tòa A',
+  address: 'TP. Hồ Chí Minh',
+  note: 'Em học ca chiều, cần giờ tự học buổi tối và muốn ở phòng không quá ồn.',
+  confirmAccuracy: false,
+  confirmPolicy: false,
+};
 
-  const confirm = async () => {
-    setConfirming(true);
-    setActionError(null);
-    try {
-      await confirmAssignment(application);
-      onReload();
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Không xác nhận được');
-    } finally {
-      setConfirming(false);
-    }
-  };
+const stageCopy: Record<ApplicationStage, { label: string; hint: string; tone: 'rose' | 'cyan' | 'green' | 'amber' | 'red' | 'slate' }> = {
+  draft: { label: 'Draft', hint: 'Có thể chỉnh sửa', tone: 'amber' },
+  submitted: { label: 'Submitted', hint: 'Đã gửi hồ sơ', tone: 'cyan' },
+  review: { label: 'Pending review', hint: 'Nhân viên đang kiểm tra', tone: 'slate' },
+  approved: { label: 'Approved', hint: 'Đã phân phòng', tone: 'green' },
+  rejected: { label: 'Rejected', hint: 'Cần đọc lý do', tone: 'red' },
+};
 
-  return (
-    <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-slate-950">Hồ sơ {application.id}</h2>
-            <StatusBadge status={application.status} />
-          </div>
-          <p className="mt-1 text-sm text-slate-500">
-            Nộp lúc {application.submittedAt}
-            {application.preference ? ` - ${application.preference}` : ''}
-          </p>
-        </CardHeader>
-        <CardContent>
-          {failed ? (
-            <Alert variant="destructive">
-              <XCircle className="h-4 w-4" aria-hidden="true" />
-              <AlertTitle>
-                {application.status === 'rejected' ? 'Hồ sơ bị từ chối' : 'Cần bổ sung hồ sơ'}
-              </AlertTitle>
-              <AlertDescription>{application.note ?? 'Liên hệ ban quản lý KTX.'}</AlertDescription>
-            </Alert>
-          ) : (
-            <ol className="space-y-4">
-              {steps.map((item) => (
-                <li key={item.label} className="flex items-start gap-3">
-                  {item.done ? (
-                    <CheckCircle2
-                      className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600"
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <CircleDashed
-                      className="mt-0.5 h-5 w-5 shrink-0 text-slate-300"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <p className="text-sm font-medium text-slate-900">{item.label}</p>
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
+const checklist = [
+  { label: 'Thông tin cá nhân', status: 'Hoàn tất', tone: 'green' as const },
+  { label: 'Nguyện vọng phòng/giường', status: 'Hoàn tất', tone: 'green' as const },
+  { label: 'Số điện thoại người giám hộ', status: 'Đã nhập', tone: 'cyan' as const },
+  { label: 'Xác nhận điều khoản cư trú', status: 'Chờ tick', tone: 'amber' as const },
+  { label: 'Xác nhận gửi hồ sơ', status: 'Chưa gửi', tone: 'slate' as const },
+];
 
-      <Card>
-        <CardHeader>
-          <h2 className="text-base font-semibold text-slate-950">Bước tiếp theo</h2>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-slate-600">
-          {actionError && <p className="text-red-600">{actionError}</p>}
-          {application.status === 'suggested' && (
-            <>
-              <p>
-                Bạn được gợi ý giường{' '}
-                <strong className="text-slate-900">{application.assignedBed ?? '—'}</strong>. Xác
-                nhận để giữ chỗ và chuyển sang bước check-in.
-              </p>
-              <Button type="button" disabled={confirming} onClick={() => void confirm()}>
-                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                {confirming ? 'Đang xác nhận...' : 'Xác nhận nhận giường'}
-              </Button>
-            </>
-          )}
-          {(application.status === 'pending' || application.status === 'reviewing') && (
-            <p>Ban quản lý sẽ phản hồi trong 3 ngày làm việc.</p>
-          )}
-          {application.status === 'approved' && (
-            <p>Hồ sơ đã duyệt. Chờ ban quản lý phân giường.</p>
-          )}
-          {application.status === 'waiting-checkin' && (
-            <p>Đã giữ chỗ. Đến văn phòng KTX để check-in nhận phòng.</p>
-          )}
-          {application.status === 'checked-in' && (
-            <p>
-              Bạn đã nhận phòng. Xem chi tiết tại mục <strong>Phòng hiện tại</strong>.
-            </p>
-          )}
-          {failed && <p>Bạn có thể chỉnh sửa và nộp lại hồ sơ sau khi bổ sung.</p>}
-        </CardContent>
-      </Card>
-    </div>
-  );
+function validateApplication(form: ApplicationForm): ValidationErrors {
+  const errors: ValidationErrors = {};
+
+  if (!form.fullName.trim()) errors.fullName = 'Vui lòng nhập họ tên.';
+  if (!/^SV\d{10}$/.test(form.studentId.trim())) errors.studentId = 'MSSV cần có dạng SV + 10 chữ số.';
+  if (!form.major.trim()) errors.major = 'Vui lòng nhập ngành học.';
+  if (!/^0\d{9}$/.test(form.phone.replace(/\s/g, ''))) errors.phone = 'Số điện thoại cần có 10 chữ số và bắt đầu bằng 0.';
+  if (!form.guardian.trim()) errors.guardian = 'Cần thông tin người giám hộ.';
+  if (!form.priority.trim()) errors.priority = 'Cần ít nhất một nguyện vọng phòng/giường.';
+  if (!form.address.trim()) errors.address = 'Vui lòng nhập địa chỉ liên hệ.';
+  if (!form.confirmAccuracy) errors.confirmAccuracy = 'Cần xác nhận thông tin chính xác.';
+  if (!form.confirmPolicy) errors.confirmPolicy = 'Cần đồng ý nội quy KTX.';
+
+  return errors;
 }
 
 export function StudentApplicationPage() {
-  const { data: applications, loading, reload } = useAsyncData(fetchApplications);
-  const [step, setStep] = useState<Step>('consent');
-  const [consented, setConsented] = useState(false);
-  const [preference, setPreference] = useState('');
-  const [evidenceAdded, setEvidenceAdded] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState<ApplicationForm>(initialForm);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [stage, setStage] = useState<ApplicationStage>('draft');
+  const [demoState, setDemoState] = useState<DemoState>('data');
 
-  const latest = (applications ?? [])[0] ?? null;
+  const completion = useMemo(() => {
+    const fields: Array<keyof ApplicationForm> = [
+      'fullName',
+      'studentId',
+      'major',
+      'phone',
+      'guardian',
+      'priority',
+      'address',
+      'confirmAccuracy',
+      'confirmPolicy',
+    ];
+    const filled = fields.filter((field) => Boolean(form[field])).length;
 
-  const submitForm = async () => {
-    if (!preference.trim() || !evidenceAdded) {
-      setFormError(
-        !evidenceAdded
-          ? 'Cần đính kèm CCCD và giấy xác nhận sinh viên.'
-          : 'Vui lòng nhập nguyện vọng phòng ở.',
-      );
-      return;
-    }
-    setFormError(null);
-    setSubmitting(true);
-    try {
-      await createAndSubmitApplication({
-        lifestyleNeeds: [preference],
-        priorityNote: 'Không thuộc diện ưu tiên',
-        documents: [{ name: 'CCCD_2mat.pdf' }, { name: 'GiayXacNhanSV.pdf' }],
-      });
-      reload();
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Không nộp được hồ sơ');
-    } finally {
-      setSubmitting(false);
+    return Math.round((filled / fields.length) * 100);
+  }, [form]);
+
+  const handleSubmit = () => {
+    const nextErrors = validateApplication(form);
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length === 0) {
+      setStage('submitted');
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Đăng ký ở KTX"
-        description="Đồng ý dữ liệu, nộp hồ sơ và theo dõi trạng thái duyệt."
-        badges={['US-002', 'US-003', 'US-004']}
-      />
+  const currentStage = stageCopy[stage];
 
-      {loading ? (
-        <LoadingState />
-      ) : latest ? (
-        <ApplicationStatusView application={latest} onReload={reload} />
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            {(
-              [
-                ['consent', '1. Đồng ý dữ liệu'],
-                ['form', '2. Nộp hồ sơ'],
-              ] as const
-            ).map(([key, label], index) => (
-              <div key={key} className="flex items-center gap-2">
-                {index > 0 && <Separator className="w-6" />}
-                <span
-                  className={
-                    step === key
-                      ? 'rounded-app bg-brand-600 px-3 py-1.5 font-medium text-white'
-                      : 'rounded-app bg-white px-3 py-1.5 text-slate-600 ring-1 ring-slate-200'
-                  }
-                >
-                  {label}
-                </span>
-              </div>
+  return (
+    <StudentPageShell
+      eyebrow="SV / Đăng ký ở KTX"
+      title="Hồ sơ đăng ký KTX"
+      description="US-003 và US-004: sinh viên nhập hồ sơ, kiểm tra validation, gửi đơn và theo dõi trạng thái xét duyệt bằng mock data."
+      primaryAction="Gửi hồ sơ"
+      secondaryAction="Lưu nháp"
+      metrics={[
+        { label: 'Hoàn tất form', value: `${completion}%`, hint: completion >= 100 ? 'Sẵn sàng gửi' : 'Còn thiếu thông tin', tone: completion >= 100 ? 'green' : 'amber' },
+        { label: 'Trạng thái', value: currentStage.label, hint: currentStage.hint, tone: currentStage.tone },
+        { label: 'Mã hồ sơ', value: 'APP-204', hint: 'Kỳ Fall 2026', tone: 'rose' },
+        { label: 'Dự kiến xử lý', value: '24h', hint: 'Sau khi submitted', tone: 'cyan' },
+      ]}
+    >
+      <Card className="border-[#f2cdd4] bg-white shadow-[0px_4px_14px_-4px_rgba(16,24,40,0.08)]">
+        <CardContent className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {(['draft', 'submitted', 'review', 'approved', 'rejected'] as const).map((item) => (
+              <Button
+                key={item}
+                type="button"
+                size="sm"
+                variant={stage === item ? 'default' : 'outline'}
+                className={
+                  stage === item
+                    ? 'bg-[#a72c3a] text-white hover:bg-[#8f2633]'
+                    : 'border-[#f2cdd4] bg-white text-[#667085] hover:bg-[#fff1f5]'
+                }
+                onClick={() => setStage(item)}
+              >
+                {stageCopy[item].label}
+              </Button>
             ))}
           </div>
+          <StudentStateTabs value={demoState} onChange={setDemoState} />
+        </CardContent>
+      </Card>
 
-          {step === 'consent' && (
-            <Card className="max-w-3xl">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-brand-600" aria-hidden="true" />
-                  <h2 className="text-base font-semibold text-slate-950">
-                    Xử lý dữ liệu cá nhân
-                  </h2>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm leading-6 text-slate-600">
-                <ul className="list-disc space-y-2 pl-5">
-                  <li>
-                    <strong>Mục đích:</strong> xét duyệt hồ sơ, phân phòng và quản lý lưu trú.
-                  </li>
-                  <li>
-                    <strong>Dữ liệu:</strong> họ tên, MSSV, giới tính, khóa/ngành, liên hệ, minh
-                    chứng ưu tiên.
-                  </li>
-                  <li>
-                    <strong>Truy cập:</strong> chỉ ban quản lý KTX được phân quyền.
-                  </li>
-                  <li>
-                    <strong>Lưu trữ:</strong> trong thời gian lưu trú + tối đa 12 tháng.
-                  </li>
-                </ul>
-                <label className="flex items-start gap-3 rounded-app border border-slate-200 bg-slate-50 p-4">
-                  <Checkbox
-                    checked={consented}
-                    onCheckedChange={(value) => setConsented(value === true)}
-                    aria-label="Đồng ý xử lý dữ liệu cá nhân"
+      <StudentStatePanel
+        state={demoState}
+        emptyTitle="Chưa có hồ sơ đăng ký"
+        emptyDescription="Sinh viên bấm Tạo hồ sơ để bắt đầu nhập thông tin đăng ký KTX."
+      >
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
+            {stage === 'rejected' && (
+              <Alert variant="destructive" className="border-[#ffcfd7] bg-[#fff1f5]">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                <AlertTitle>Hồ sơ bị từ chối</AlertTitle>
+                <AlertDescription>
+                  Mock rejected state: thiếu minh chứng ưu tiên hoặc thông tin người giám hộ chưa hợp lệ.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {stage === 'approved' && (
+              <Alert className="border-[#c9f0db] bg-[#e7f8ef] text-[#16845c]">
+                <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+                <AlertTitle>Hồ sơ đã được duyệt</AlertTitle>
+                <AlertDescription className="text-[#16845c]">
+                  Sinh viên được phân Building A · Room A-302 · Bed B4. Vào Phòng hiện tại để xem chi tiết.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <StudentSectionCard
+              title="Application form"
+              description="Validation state nằm ngay dưới field; không gọi API thật, chỉ cập nhật local state."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm font-semibold text-[#101828]">
+                  Họ tên
+                  <Input
+                    value={form.fullName}
+                    onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
+                    className="border-[#e8d5da] bg-white"
                   />
-                  <span className="text-slate-700">
-                    Tôi đồng ý để KTX xử lý dữ liệu cá nhân theo mục đích trên.
+                  {errors.fullName && <span className="block text-xs text-[#c91d2e]">{errors.fullName}</span>}
+                </label>
+
+                <label className="space-y-2 text-sm font-semibold text-[#101828]">
+                  MSSV
+                  <Input
+                    value={form.studentId}
+                    onChange={(event) => setForm((current) => ({ ...current, studentId: event.target.value }))}
+                    className="border-[#e8d5da] bg-white"
+                  />
+                  {errors.studentId && <span className="block text-xs text-[#c91d2e]">{errors.studentId}</span>}
+                </label>
+
+                <label className="space-y-2 text-sm font-semibold text-[#101828]">
+                  Ngành học
+                  <Input
+                    value={form.major}
+                    onChange={(event) => setForm((current) => ({ ...current, major: event.target.value }))}
+                    className="border-[#e8d5da] bg-white"
+                  />
+                  {errors.major && <span className="block text-xs text-[#c91d2e]">{errors.major}</span>}
+                </label>
+
+                <label className="space-y-2 text-sm font-semibold text-[#101828]">
+                  Số điện thoại
+                  <Input
+                    value={form.phone}
+                    onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                    className="border-[#e8d5da] bg-white"
+                  />
+                  {errors.phone && <span className="block text-xs text-[#c91d2e]">{errors.phone}</span>}
+                </label>
+
+                <label className="space-y-2 text-sm font-semibold text-[#101828] md:col-span-2">
+                  Người giám hộ
+                  <Input
+                    value={form.guardian}
+                    onChange={(event) => setForm((current) => ({ ...current, guardian: event.target.value }))}
+                    className="border-[#e8d5da] bg-white"
+                  />
+                  {errors.guardian && <span className="block text-xs text-[#c91d2e]">{errors.guardian}</span>}
+                </label>
+
+                <label className="space-y-2 text-sm font-semibold text-[#101828] md:col-span-2">
+                  Địa chỉ liên hệ
+                  <Input
+                    value={form.address}
+                    onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
+                    className="border-[#e8d5da] bg-white"
+                  />
+                  {errors.address && <span className="block text-xs text-[#c91d2e]">{errors.address}</span>}
+                </label>
+
+                <label className="space-y-2 text-sm font-semibold text-[#101828] md:col-span-2">
+                  Nguyện vọng phòng/giường
+                  <Textarea
+                    value={form.priority}
+                    onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}
+                    className="min-h-24 border-[#e8d5da] bg-white"
+                  />
+                  {errors.priority && <span className="block text-xs text-[#c91d2e]">{errors.priority}</span>}
+                </label>
+
+                <label className="space-y-2 text-sm font-semibold text-[#101828] md:col-span-2">
+                  Ghi chú thêm
+                  <Textarea
+                    value={form.note}
+                    onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
+                    className="min-h-24 border-[#e8d5da] bg-white"
+                  />
+                </label>
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-[#f2cdd4] bg-[#fff9fb] p-4">
+                <label className="flex items-start gap-3 text-sm text-[#667085]">
+                  <Checkbox
+                    checked={form.confirmAccuracy}
+                    onCheckedChange={(checked) =>
+                      setForm((current) => ({ ...current, confirmAccuracy: Boolean(checked) }))
+                    }
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Em xác nhận thông tin đăng ký là chính xác.
+                    {errors.confirmAccuracy && <span className="block text-xs text-[#c91d2e]">{errors.confirmAccuracy}</span>}
                   </span>
                 </label>
-                <Button type="button" disabled={!consented} onClick={() => setStep('form')}>
-                  Tiếp tục
-                </Button>
-              </CardContent>
-            </Card>
-          )}
 
-          {step === 'form' && (
-            <Card className="max-w-3xl">
-              <CardHeader>
-                <h2 className="text-base font-semibold text-slate-950">Hồ sơ đăng ký</h2>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {formError && (
-                  <Alert variant="destructive">
-                    <XCircle className="h-4 w-4" aria-hidden="true" />
-                    <AlertTitle>Không thể nộp hồ sơ</AlertTitle>
-                    <AlertDescription>{formError}</AlertDescription>
-                  </Alert>
-                )}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="grid gap-2 text-sm font-medium text-slate-700">
-                    Họ và tên
-                    <Input value={currentStudent.name} readOnly />
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium text-slate-700">
-                    MSSV
-                    <Input value={currentStudent.id} readOnly />
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium text-slate-700">
-                    Giới tính
-                    <Input value={currentStudent.gender} readOnly />
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium text-slate-700">
-                    Khóa / Ngành
-                    <Input value={`${currentStudent.cohort} - ${currentStudent.major}`} readOnly />
-                  </label>
-                </div>
-                <Separator />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-2 text-sm font-medium text-slate-700">
-                    Diện ưu tiên
-                    <Select defaultValue="none">
-                      <SelectTrigger aria-label="Diện ưu tiên">
-                        <SelectValue placeholder="Chọn diện ưu tiên" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Không</SelectItem>
-                        <SelectItem value="poor">Hộ nghèo / cận nghèo</SelectItem>
-                        <SelectItem value="veteran">Con thương binh, liệt sĩ</SelectItem>
-                        <SelectItem value="remote">Vùng sâu vùng xa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2 text-sm font-medium text-slate-700">
-                    Tòa nhà mong muốn
-                    <Select defaultValue="A">
-                      <SelectTrigger aria-label="Tòa nhà mong muốn">
-                        <SelectValue placeholder="Chọn tòa nhà" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">Tòa A (Nam)</SelectItem>
-                        <SelectItem value="B">Tòa B (Nữ)</SelectItem>
-                        <SelectItem value="C">Tòa C (Nam)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <label className="grid gap-2 text-sm font-medium text-slate-700">
-                  Nguyện vọng khác *
-                  <Textarea
-                    placeholder="Ví dụ: phòng yên tĩnh, ở cùng bạn cùng lớp..."
-                    value={preference}
-                    onChange={(event) => setPreference(event.target.value)}
+                <label className="flex items-start gap-3 text-sm text-[#667085]">
+                  <Checkbox
+                    checked={form.confirmPolicy}
+                    onCheckedChange={(checked) =>
+                      setForm((current) => ({ ...current, confirmPolicy: Boolean(checked) }))
+                    }
+                    className="mt-0.5"
                   />
+                  <span>
+                    Em đồng ý nội quy KTX và quyền xử lý dữ liệu phục vụ xét duyệt.
+                    {errors.confirmPolicy && <span className="block text-xs text-[#c91d2e]">{errors.confirmPolicy}</span>}
+                  </span>
                 </label>
-                <div className="grid gap-2 text-sm font-medium text-slate-700">
-                  Minh chứng *
-                  <div className="rounded-app border border-dashed border-slate-300 bg-slate-50 p-4">
-                    {evidenceAdded ? (
-                      <ul className="space-y-2 text-sm text-slate-700">
-                        <li className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-                          CCCD_2mat.pdf
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-                          GiayXacNhanSV.pdf
-                        </li>
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-slate-500">
-                        CCCD 2 mặt và giấy xác nhận sinh viên (PDF/JPG, tối đa 5 MB).
-                      </p>
-                    )}
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="mt-3"
-                      onClick={() => setEvidenceAdded(true)}
-                    >
-                      <FileUp className="h-4 w-4" aria-hidden="true" />
-                      {evidenceAdded ? 'Thêm tệp khác' : 'Tải minh chứng lên'}
-                    </Button>
-                  </div>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-[#f2cdd4] bg-white text-[#a72c3a] hover:bg-[#fff1f5]"
+                >
+                  Lưu nháp
+                </Button>
+                <Button type="button" className="bg-[#a72c3a] text-white hover:bg-[#8f2633]" onClick={handleSubmit}>
+                  <SendHorizontal className="h-4 w-4" aria-hidden="true" />
+                  Gửi hồ sơ
+                </Button>
+              </div>
+            </StudentSectionCard>
+          </div>
+
+          <div className="space-y-4">
+            <StudentSectionCard title="Status timeline" description="US-004 application status: pending/approved/rejected states.">
+              <StudentTimeline
+                items={[
+                  {
+                    title: 'Draft',
+                    description: 'Sinh viên nhập hồ sơ và có thể lưu nháp.',
+                    done: ['submitted', 'review', 'approved', 'rejected'].includes(stage),
+                    tone: stage === 'draft' ? 'amber' : 'green',
+                  },
+                  {
+                    title: 'Submitted',
+                    description: 'Hồ sơ đã gửi, khóa các field quan trọng.',
+                    done: ['review', 'approved', 'rejected'].includes(stage),
+                    tone: stage === 'submitted' ? 'cyan' : 'green',
+                  },
+                  {
+                    title: 'Staff review',
+                    description: 'Nhân viên rà soát điều kiện và minh chứng.',
+                    done: ['approved', 'rejected'].includes(stage),
+                    tone: stage === 'review' ? 'amber' : 'slate',
+                  },
+                  {
+                    title: stage === 'rejected' ? 'Rejected' : 'Approved room',
+                    description:
+                      stage === 'rejected'
+                        ? 'Hiển thị lý do từ chối và hướng dẫn bổ sung.'
+                        : 'Hiển thị phòng/giường được phân và checklist xác nhận.',
+                    done: ['approved', 'rejected'].includes(stage),
+                    tone: stage === 'rejected' ? 'red' : stage === 'approved' ? 'green' : 'slate',
+                  },
+                ]}
+              />
+            </StudentSectionCard>
+
+            <StudentSectionCard title="Checklist hồ sơ">
+              <Table>
+                <TableHeader className="bg-[#fff9fb]">
+                  <TableRow className="border-[#f2cdd4] hover:bg-[#fff9fb]">
+                    <TableHead className="text-xs font-semibold text-[#667085]">Mục</TableHead>
+                    <TableHead className="text-xs font-semibold text-[#667085]">Trạng thái</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {checklist.map((item) => (
+                    <TableRow key={item.label} className="border-[#f2cdd4] hover:bg-[#fff9fb]">
+                      <TableCell className="text-sm font-semibold text-[#101828]">{item.label}</TableCell>
+                      <TableCell>
+                        <StudentStatusPill tone={item.tone}>{item.status}</StudentStatusPill>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </StudentSectionCard>
+
+            <StudentSectionCard title="Room suggestion preview">
+              <div className="rounded-xl border border-[#f2cdd4] bg-[#fff9fb] p-4">
+                <div className="flex items-center gap-2 text-sm font-bold text-[#101828]">
+                  <FileText className="h-4 w-4 text-[#a72c3a]" aria-hidden="true" />
+                  Building A · Room A-302 · Bed B4
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" disabled={submitting} onClick={() => void submitForm()}>
-                    {submitting ? 'Đang nộp...' : 'Nộp hồ sơ'}
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => setStep('consent')}>
-                    Quay lại
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
-    </div>
+                <p className="mt-2 text-sm leading-6 text-[#667085]">
+                  Chỉ hiển thị chính thức khi application chuyển sang Approved. Đây là preview để demo flow draft → approved room.
+                </p>
+              </div>
+            </StudentSectionCard>
+          </div>
+        </div>
+      </StudentStatePanel>
+    </StudentPageShell>
   );
 }
