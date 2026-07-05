@@ -15,7 +15,8 @@ concurrency:
 env:
   VITE_API_MODE: live
   VITE_API_URL: ${{ vars.VITE_API_URL || 'https://qlktx-backend-2302700155.azurewebsites.net' }}
-  AZURE_STATIC_WEB_APPS_API_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+  AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME || 'qlktx-web-2302700155' }}
+  AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
 jobs:
   build:
@@ -51,31 +52,28 @@ jobs:
           path: dist
           if-no-files-found: error
 
-  deploy-azure-static-web-apps:
-    name: Deploy Azure Static Web Apps
+  deploy-azure-web-app:
+    name: Deploy Azure App Service
     runs-on: ubuntu-latest
     needs: build
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: dist
 
       - name: Deploy
-        if: env.AZURE_STATIC_WEB_APPS_API_TOKEN != ''
-        uses: Azure/static-web-apps-deploy@v1
+        if: env.AZURE_WEBAPP_PUBLISH_PROFILE != ''
+        uses: azure/webapps-deploy@v3
         with:
-          azure_static_web_apps_api_token: ${{ env.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: upload
-          app_location: /
-          output_location: dist
-          app_build_command: npm run build
-        env:
-          VITE_API_MODE: ${{ env.VITE_API_MODE }}
-          VITE_API_URL: ${{ env.VITE_API_URL }}
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ env.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: dist
 
       - name: Deployment skipped
-        if: env.AZURE_STATIC_WEB_APPS_API_TOKEN == ''
+        if: env.AZURE_WEBAPP_PUBLISH_PROFILE == ''
         run: |
-          echo "AZURE_STATIC_WEB_APPS_API_TOKEN is not configured."
-          echo "Create an Azure Static Web App, then add its deployment token as a GitHub Actions secret."
+          echo "AZURE_WEBAPP_PUBLISH_PROFILE is not configured."
+          echo "Download the publish profile from Azure App Service and add it as a GitHub Actions secret."
