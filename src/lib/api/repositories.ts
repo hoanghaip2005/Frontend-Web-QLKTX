@@ -29,6 +29,7 @@ import {
   residents,
   rooms,
   studentNotifications,
+  studentRequests,
   systemUsers,
   tickets,
 } from '@/mocks/data/dormData';
@@ -40,6 +41,7 @@ import type {
   Invoice as MockInvoice,
   Room,
   StudentNotification,
+  StudentRequest as MockStudentRequest,
   SystemUser,
   Ticket,
 } from '@/mocks/data/dormData';
@@ -85,6 +87,7 @@ const mockState = {
   tickets: structuredClone(tickets) as Ticket[],
   invoices: structuredClone(invoices) as MockInvoice[],
   rooms: structuredClone(rooms) as Room[],
+  requests: structuredClone(studentRequests) as MockStudentRequest[],
   users: structuredClone(systemUsers) as SystemUser[],
   rules: structuredClone(allocationRules) as AllocationRule[],
   audit: structuredClone(auditLog) as AuditEntry[],
@@ -710,6 +713,117 @@ export async function markInvoicePaid(invoice: BillingInvoice, note: string): Pr
       note,
     },
   });
+}
+
+// ---------- student requests ----------
+
+export type StudentServiceRequest = {
+  backendId?: string;
+  code: string;
+  type: string;
+  detail: string;
+  createdAt: string;
+  status: 'draft' | 'submitted' | 'reviewing' | 'approved' | 'rejected' | 'cancelled' | 'completed';
+};
+
+export type CreateStudentRequestInput = {
+  type:
+    | 'change_room'
+    | 'extend_stay'
+    | 'checkout'
+    | 'temporary_residence'
+    | 'reflection'
+    | 'late_entry'
+    | 'other';
+  reason: string;
+};
+
+type StudentRequestDto = {
+  id: string;
+  request_code: string;
+  type: CreateStudentRequestInput['type'];
+  status: string;
+  reason?: string | null;
+  created_at: string;
+  current_room_code?: string | null;
+  target_room_code?: string | null;
+};
+
+const requestTypeLabel: Record<CreateStudentRequestInput['type'], string> = {
+  change_room: 'Đổi phòng',
+  extend_stay: 'Gia hạn lưu trú',
+  checkout: 'Trả phòng',
+  temporary_residence: 'Tạm trú',
+  reflection: 'Phản ánh',
+  late_entry: 'Về muộn',
+  other: 'Khác',
+};
+
+function requestStatus(status: string): StudentServiceRequest['status'] {
+  if (status === 'in_review') return 'reviewing';
+  if (status === 'approved') return 'approved';
+  if (status === 'rejected') return 'rejected';
+  if (status === 'cancelled') return 'cancelled';
+  if (status === 'completed') return 'completed';
+  if (status === 'submitted') return 'submitted';
+  return 'draft';
+}
+
+function mapStudentRequest(row: StudentRequestDto): StudentServiceRequest {
+  return {
+    backendId: row.id,
+    code: row.request_code,
+    type: requestTypeLabel[row.type] ?? row.type,
+    detail: row.reason ?? '-',
+    createdAt: row.created_at.slice(0, 16).replace('T', ' '),
+    status: requestStatus(row.status),
+  };
+}
+
+export async function fetchStudentRequests(): Promise<StudentServiceRequest[]> {
+  if (!live()) {
+    await delay();
+    return mockState.requests.map((request) => ({
+      code: request.id,
+      type: request.type,
+      detail: request.detail,
+      createdAt: request.createdAt,
+      status: request.status === 'pending' ? 'submitted' : request.status,
+    }));
+  }
+  return (await http<StudentRequestDto[]>('/api/requests?pageSize=100')).map(mapStudentRequest);
+}
+
+export async function createStudentRequest(
+  input: CreateStudentRequestInput,
+): Promise<StudentServiceRequest> {
+  if (!live()) {
+    await delay();
+    const created: MockStudentRequest = {
+      id: `REQ-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(mockState.requests.length + 1).padStart(3, '0')}`,
+      type: requestTypeLabel[input.type],
+      detail: input.reason,
+      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      status: 'pending',
+    };
+    mockState.requests.unshift(created);
+    return {
+      code: created.id,
+      type: created.type,
+      detail: created.detail,
+      createdAt: created.createdAt,
+      status: 'submitted',
+    };
+  }
+
+  const draft = await http<StudentRequestDto>('/api/requests', {
+    method: 'POST',
+    body: { type: input.type, reason: input.reason },
+  });
+  const submitted = await http<StudentRequestDto>(`/api/requests/${draft.id}/submit`, {
+    method: 'POST',
+  });
+  return mapStudentRequest(submitted);
 }
 
 // ---------- admin ----------

@@ -13,6 +13,7 @@ const toneClass: Record<Tone, string> = {
 
 const statusMap: Record<string, { label: string; tone: Tone }> = {
   draft: { label: 'Nháp', tone: 'neutral' },
+  submitted: { label: 'Đã gửi', tone: 'info' },
   pending: { label: 'Chờ duyệt', tone: 'warning' },
   reviewing: { label: 'Đang xem xét', tone: 'info' },
   approved: { label: 'Đã duyệt', tone: 'success' },
@@ -21,6 +22,7 @@ const statusMap: Record<string, { label: string; tone: Tone }> = {
   suggested: { label: 'Đã gợi ý phòng', tone: 'info' },
   'waiting-checkin': { label: 'Chờ check-in', tone: 'info' },
   cancelled: { label: 'Đã hủy', tone: 'neutral' },
+  completed: { label: 'Hoàn tất', tone: 'success' },
 
   new: { label: 'Mới', tone: 'info' },
   assigned: { label: 'Đã gán', tone: 'info' },
