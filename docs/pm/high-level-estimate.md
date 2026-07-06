@@ -90,3 +90,4 @@ Theo nội dung [D07 Agile Planning](https://nndkhoa.github.io/project-managemen
 ## Conclusion
 
 The high-level estimate supports an 8-week MVP release if the team protects the Must Have scope and uses the 4-sprint Jira plan as the baseline. The full 117 SP backlog should not be promised inside the MVP window. Phase 2 adds about 43 SP and should be planned as a later pilot-readiness release after MVP validation.
+

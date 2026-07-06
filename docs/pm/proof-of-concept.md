@@ -124,3 +124,4 @@ The PoC focuses on three risks:
 | Room/bed ledger and assignment | US-006, US-008, US-009, US-010 | Room/Bed Ledger, Assignment Suggestion/Override |
 | Maintenance and SLA | US-011, US-012, US-013 | Maintenance Ticket, SLA Board |
 | Dashboard | US-014, US-015 | Operations Dashboard |
+

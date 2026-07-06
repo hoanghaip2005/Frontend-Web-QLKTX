@@ -77,3 +77,4 @@ DormCare Hub hướng tới một nền tảng quản lý ký túc xá tập tru
 ## Summary
 
 The roadmap protects the MVP by keeping Release 1 focused on 74 SP of Must Have work. Release 2 contains 43 SP of pilot-readiness features that improve operations but are not required for the first demo. Release 3 keeps SIS, payment gateway, and native mobile explicit but deferred so the team does not silently expand MVP scope.
+

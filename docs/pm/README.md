@@ -30,6 +30,7 @@ DormCare Hub is a web-responsive dormitory management system for schools. The MV
 | [Prototype Spec](prototype-spec.md) | Defines the Figma prototype screens, flows, components, sample data, and acceptance criteria. | Backlog, Vision & Scope, Meeting Minutes |
 | [Figma Implementation Guide](figma-implementation-guide.md) | Execution runbook for creating the Figma file, canvas layout, components, prototype links, and QA checks. | Prototype Spec, Figma workflow rules |
 | [Implementation Traceability](implementation-traceability.md) | Truy vết US → màn hình React → API → bằng chứng test cho review DoD và demo. | Product Backlog, Prototype Spec, mã nguồn 2 repo |
+| [Demo Script & Test Scenarios](demo-script-test-scenarios.md) | Kịch bản đóng vai SV/Staff/Admin theo timeline, 14 tình huống test negative/edge, luận điểm "không chỉ CRUD". | Traceability, môi trường Azure production |
 
 ## Current Status
 
@@ -61,3 +62,4 @@ Recommended review order:
 7. Execute [Proof of Concept](proof-of-concept.md) before committing to detailed build decisions.
 8. Use [Prototype Spec](prototype-spec.md) to build and validate the Figma prototype.
 9. Follow [Figma Implementation Guide](figma-implementation-guide.md) when the Figma write tools are available.
+
