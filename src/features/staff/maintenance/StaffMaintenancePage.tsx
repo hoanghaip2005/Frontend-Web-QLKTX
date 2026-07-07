@@ -38,6 +38,7 @@ import {
   fetchTickets,
   setTicketResolved,
 } from '@/lib/api/repositories';
+import { formatStatusLabel } from '@/lib/formatters/status';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
 import type { Ticket, TicketPriority } from '@/mocks/data/dormData';
 
@@ -274,7 +275,7 @@ export function StaffMaintenancePage() {
               <SelectContent>
                 {(Object.keys(slaByPriority) as TicketPriority[]).map((level) => (
                   <SelectItem key={level} value={level}>
-                    {level.toUpperCase()} - SLA {slaByPriority[level]}
+                    {formatStatusLabel(level)} - SLA {slaByPriority[level]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -299,7 +300,11 @@ export function StaffMaintenancePage() {
             <Button type="button" variant="ghost" onClick={() => setAssigning(null)}>
               Hủy
             </Button>
-            <Button type="button" disabled={!assigneeId || saving} onClick={() => void applyAssign()}>
+            <Button
+              type="button"
+              disabled={!assigneeId || saving}
+              onClick={() => void applyAssign()}
+            >
               {saving ? 'Đang lưu...' : 'Gán & đặt SLA'}
             </Button>
           </DialogFooter>

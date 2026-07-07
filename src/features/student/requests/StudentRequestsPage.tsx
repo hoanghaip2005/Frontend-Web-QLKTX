@@ -207,7 +207,10 @@ export function StudentRequestsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={selectedRequest !== null} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+      <Dialog
+        open={selectedRequest !== null}
+        onOpenChange={(open) => !open && setSelectedRequest(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chi tiết yêu cầu {selectedRequest?.code}</DialogTitle>
@@ -222,9 +225,11 @@ export function StudentRequestsPage() {
               {[
                 ['Loại yêu cầu', selectedRequest.type],
                 ['Ngày tạo', selectedRequest.createdAt],
-                ['Mã backend', selectedRequest.backendId ?? '-'],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                <div
+                  key={label}
+                  className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2"
+                >
                   <span className="text-slate-500">{label}</span>
                   <span className="text-right font-medium text-slate-900">{value}</span>
                 </div>

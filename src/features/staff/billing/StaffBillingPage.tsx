@@ -24,11 +24,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { fetchInvoices, markInvoicePaid, type BillingInvoice } from '@/lib/api/repositories';
+import { formatStatusLabel } from '@/lib/formatters/status';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
 
 function paymentRecordLabel(record: Record<string, unknown>) {
   const method = String(record.method ?? record.payType ?? record.partnerCode ?? 'Giao dịch');
-  const status = String(record.status ?? record.resultCode ?? 'đã ghi nhận');
+  const rawStatus =
+    record.status ??
+    (record.resultCode === 0 || record.resultCode === '0' ? 'success' : record.resultCode) ??
+    'verified';
+  const status = formatStatusLabel(String(rawStatus));
   const amount =
     typeof record.amount === 'number' ? `${record.amount.toLocaleString('vi-VN')}đ` : null;
   const time = String(record.at ?? record.created_at ?? record.transTime ?? '')
@@ -108,7 +113,10 @@ export function StaffBillingPage() {
           {loading ? (
             <LoadingState />
           ) : !invoices?.length ? (
-            <EmptyState title="Chưa có hóa đơn" description="Các hóa đơn mới sẽ xuất hiện tại đây." />
+            <EmptyState
+              title="Chưa có hóa đơn"
+              description="Các hóa đơn mới sẽ xuất hiện tại đây."
+            />
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -175,7 +183,10 @@ export function StaffBillingPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={selectedInvoice !== null} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+      <Dialog
+        open={selectedInvoice !== null}
+        onOpenChange={(open) => !open && setSelectedInvoice(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chi tiết hóa đơn {selectedInvoice?.code}</DialogTitle>
@@ -192,7 +203,10 @@ export function StaffBillingPage() {
                 ['Còn lại', selectedInvoice.balance],
                 ['Hạn nộp', selectedInvoice.due],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                <div
+                  key={label}
+                  className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2"
+                >
                   <span className="text-slate-500">{label}</span>
                   <span className="text-right font-medium text-slate-900">{value}</span>
                 </div>

@@ -11,6 +11,7 @@ import type {
   TicketPriority,
   TicketStatus,
 } from '@/mocks/data/dormData';
+import { formatStatusLabel, formatTimelineEvent } from '@/lib/formatters/status';
 
 // ---------- DTO types (subset of backend columns the UI consumes) ----------
 
@@ -141,7 +142,10 @@ export function mapApplication(dto: ApplicationDto): Application {
     cohort: '',
     major: '',
     priority: dto.priority_note ?? 'Không',
-    preference: [dto.desired_building_code ? `Tòa ${dto.desired_building_code}` : null, ...(dto.lifestyle_needs ?? [])]
+    preference: [
+      dto.desired_building_code ? `Tòa ${dto.desired_building_code}` : null,
+      ...(dto.lifestyle_needs ?? []),
+    ]
       .filter(Boolean)
       .join(', '),
     evidence: (dto.documents ?? []).map((doc) => doc.name ?? 'tài liệu'),
@@ -196,12 +200,18 @@ export function mapTicket(dto: TicketDto): Ticket {
     description: dto.description ?? '',
     history: (dto.timeline ?? []).map((entry) => ({
       at: entry.at?.slice(0, 16).replace('T', ' ') ?? '-',
-      event: entry.event === 'status_changed' ? `Chuyển trạng thái: ${entry.status ?? ''}${entry.note ? ` - ${entry.note}` : ''}` : (entry.note ?? entry.event ?? ''),
+      event:
+        entry.event === 'status_changed'
+          ? `Chuyển trạng thái: ${entry.status ? formatStatusLabel(entry.status) : 'Đã cập nhật'}${entry.note ? ` - ${entry.note}` : ''}`
+          : formatTimelineEvent(entry.note ?? entry.event ?? ''),
     })),
   };
 }
 
-export function mapSuggestion(dto: SuggestionDto, studentName: string): AssignmentSuggestion | null {
+export function mapSuggestion(
+  dto: SuggestionDto,
+  studentName: string,
+): AssignmentSuggestion | null {
   const top = dto.suggestions[0];
   if (!top) return null;
   return {

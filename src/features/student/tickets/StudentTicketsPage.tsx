@@ -41,6 +41,7 @@ import {
   fetchCurrentRoom,
   fetchTickets,
 } from '@/lib/api/repositories';
+import { formatTimelineEvent } from '@/lib/formatters/status';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
 import type { Ticket } from '@/mocks/data/dormData';
 
@@ -86,8 +87,7 @@ export function StudentTicketsPage() {
     }, setFormError);
   };
 
-  const applyConfirm = (ticket: Ticket) =>
-    run(() => confirmTicket(ticket, true), setFormError);
+  const applyConfirm = (ticket: Ticket) => run(() => confirmTicket(ticket, true), setFormError);
 
   const applyReopen = () => {
     if (!reopenTarget || !reopenReason.trim()) return;
@@ -125,7 +125,8 @@ export function StudentTicketsPage() {
             <h2 className="text-base font-semibold text-slate-950">Ticket mới</h2>
             <div className="mt-2 flex items-center gap-2 rounded-app bg-slate-50 p-3 text-sm text-slate-600">
               <QrCode className="h-4 w-4 text-brand-600" aria-hidden="true" />
-              Ngữ cảnh: phòng {currentRoom?.roomCode ?? 'chưa nhận phòng'} (quét QR tài sản để gắn đúng thiết bị)
+              Ngữ cảnh: phòng {currentRoom?.roomCode ?? 'chưa nhận phòng'} (quét QR tài sản để gắn
+              đúng thiết bị)
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -237,15 +238,16 @@ export function StudentTicketsPage() {
                       <History className="h-4 w-4" aria-hidden="true" />
                       Lịch sử xử lý
                     </div>
-                    <ol className="grid gap-2 sm:grid-cols-2">
+                    <ol className="grid gap-2">
                       {ticket.history.map((item, index) => (
                         <li
                           key={`${item.at}-${index}`}
-                          className="rounded-app bg-slate-50 px-3 py-2 text-xs text-slate-600"
+                          className="grid gap-1 rounded-app border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600 sm:grid-cols-[140px_1fr]"
                         >
                           <span className="font-medium text-slate-800">{item.at}</span>
-                          <span className="mx-1 text-slate-300">•</span>
-                          {item.event}
+                          <span className="leading-5 text-slate-700">
+                            {formatTimelineEvent(item.event)}
+                          </span>
                         </li>
                       ))}
                     </ol>

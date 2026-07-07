@@ -32,6 +32,7 @@ import {
   type BillingInvoice,
   type MomoPaymentSession,
 } from '@/lib/api/repositories';
+import { formatStatusLabel } from '@/lib/formatters/status';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
 
 type MomoDialogState = {
@@ -42,7 +43,11 @@ type MomoDialogState = {
 
 function paymentRecordLabel(record: Record<string, unknown>) {
   const method = String(record.method ?? record.payType ?? record.partnerCode ?? 'Giao dịch');
-  const status = String(record.status ?? record.resultCode ?? 'đã ghi nhận');
+  const rawStatus =
+    record.status ??
+    (record.resultCode === 0 || record.resultCode === '0' ? 'success' : record.resultCode) ??
+    'verified';
+  const status = formatStatusLabel(String(rawStatus));
   const amount =
     typeof record.amount === 'number' ? `${record.amount.toLocaleString('vi-VN')}đ` : null;
   const time = String(record.at ?? record.created_at ?? record.transTime ?? '')
@@ -250,7 +255,10 @@ export function StudentInvoicesPage() {
               Đóng
             </Button>
             {momoDialog && (
-              <Button type="button" onClick={() => window.location.assign(momoDialog.payment.payUrl)}>
+              <Button
+                type="button"
+                onClick={() => window.location.assign(momoDialog.payment.payUrl)}
+              >
                 <ExternalLink className="mr-1.5 h-4 w-4" aria-hidden="true" />
                 Mở trang MoMo
               </Button>
@@ -259,7 +267,10 @@ export function StudentInvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={selectedInvoice !== null} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+      <Dialog
+        open={selectedInvoice !== null}
+        onOpenChange={(open) => !open && setSelectedInvoice(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chi tiết hóa đơn {selectedInvoice?.code}</DialogTitle>
@@ -273,9 +284,11 @@ export function StudentInvoicesPage() {
                 ['Đã thu', selectedInvoice.paidAmount],
                 ['Còn lại', selectedInvoice.balance],
                 ['Hạn nộp', selectedInvoice.due],
-                ['Mã backend', selectedInvoice.backendId ?? '-'],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2">
+                <div
+                  key={label}
+                  className="flex justify-between gap-4 rounded-app bg-slate-50 px-3 py-2"
+                >
                   <span className="text-slate-500">{label}</span>
                   <span className="text-right font-medium text-slate-900">{value}</span>
                 </div>
