@@ -185,6 +185,51 @@ export type AdminDashboard = {
   auditCount: number;
 };
 
+export type AdminReportKpi = {
+  occupancy: {
+    bedsTotal: number;
+    bedsOccupied: number;
+    occupancyRate: number;
+    roomsTotal: number;
+    roomsFull: number;
+  };
+  applications: {
+    total: number;
+    pending: number;
+    approved: number;
+    checkedIn: number;
+    rejected: number;
+  };
+  maintenance: {
+    open: number;
+    overdue: number;
+  };
+  billing: {
+    unpaidInvoices: number;
+    outstandingBalance: number;
+  };
+};
+
+export type AdminBillingReport = {
+  totals: {
+    billed: number;
+    collected: number;
+    outstanding: number;
+  };
+  byStatus: { paymentStatus: string; count: number; amount: number }[];
+  monthly: { month: string; billed: number; collected: number }[];
+};
+
+export type AdminMaintenanceReport = {
+  sla: {
+    open: number;
+    overdue: number;
+    avgResolutionMinutes: number | null;
+  };
+  byCategory: { category: string; count: number }[];
+  byStatus: { status: string; count: number }[];
+};
+
 export type MomoPaymentSession = {
   payUrl: string;
   deeplink?: string;
@@ -209,8 +254,93 @@ type InvoiceDto = {
   payment_records?: Record<string, unknown>[];
 };
 
+export type Building = {
+  backendId?: string;
+  code: string;
+  name: string;
+  address?: string;
+  genderPolicy?: 'male' | 'female' | 'other';
+  status: 'active' | 'maintenance' | 'closed';
+  floorsCount?: number;
+  roomsCount?: number;
+  bedsCount?: number;
+  managerName?: string;
+};
+
+type BuildingDto = {
+  id: string;
+  code: string;
+  name: string;
+  address?: string | null;
+  gender_policy?: 'male' | 'female' | 'other' | null;
+  status?: 'active' | 'maintenance' | 'closed';
+  floors_count?: number | null;
+  rooms_count?: number | null;
+  beds_count?: number | null;
+  manager_name?: string | null;
+};
+
+export type UpsertBuildingInput = {
+  code: string;
+  name: string;
+  address?: string;
+  floorsCount?: number;
+  genderPolicy?: 'male' | 'female' | 'other';
+  status: Building['status'];
+  managerId?: string;
+  note?: string;
+};
+
+export type UpsertRoomInput = {
+  buildingId: string;
+  roomCode: string;
+  roomNo: string;
+  floor: number;
+  capacity: number;
+  gender: 'male' | 'female' | 'other';
+  status: 'available' | 'full' | 'maintenance' | 'locked';
+  monthlyPrice?: number;
+  note?: string;
+};
+
+export type RoomAsset = {
+  backendId?: string;
+  assetCode: string;
+  name: string;
+  category: string;
+  status: 'ok' | 'broken' | 'maintenance' | 'missing' | 'retired';
+};
+
+export type CreateSystemUserInput = {
+  name: string;
+  email: string;
+  role: SystemUser['role'];
+  code?: string;
+};
+
+type SystemUserDto = {
+  id: string;
+  email?: string;
+  full_name: string;
+  role: string;
+  status: string;
+  student_code?: string | null;
+  staff_code?: string | null;
+  department?: string | null;
+  class_name?: string | null;
+  cohort?: string | null;
+  phone_number?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
 function formatCurrency(value: string | number | null | undefined) {
   return currencyFormatter.format(Number(value ?? 0));
+}
+
+function parseMockMoney(value: string | number | null | undefined) {
+  if (typeof value === 'number') return value;
+  return Number(String(value ?? '0').replace(/[^\d]/g, '')) || 0;
 }
 
 function invoiceStatus(status: string): BillingInvoice['status'] {
@@ -236,6 +366,209 @@ function mapInvoice(row: InvoiceDto): BillingInvoice {
     rawStatus: row.payment_status,
     paymentRecords: row.payment_records ?? [],
   };
+}
+
+function mapBuilding(row: BuildingDto): Building {
+  return {
+    backendId: row.id,
+    code: row.code,
+    name: row.name,
+    address: row.address ?? undefined,
+    genderPolicy: row.gender_policy ?? undefined,
+    status: row.status ?? 'active',
+    floorsCount: row.floors_count ?? undefined,
+    roomsCount: row.rooms_count ?? undefined,
+    bedsCount: row.beds_count ?? undefined,
+    managerName: row.manager_name ?? undefined,
+  };
+}
+
+function mapSystemUser(row: SystemUserDto): SystemUser {
+  return {
+    backendId: row.id,
+    email: row.email ?? row.id,
+    name: row.full_name,
+    role: (['student', 'staff', 'admin'].includes(row.role)
+      ? row.role
+      : 'staff') as SystemUser['role'],
+    status: row.status === 'active' ? 'active' : row.status === 'invited' ? 'invited' : 'locked',
+    lastActive:
+      (row.updated_at ?? row.created_at)?.slice(0, 16).replace('T', ' ') ?? '-',
+    code: row.student_code ?? row.staff_code ?? undefined,
+    cohort: row.cohort ?? undefined,
+    unit: row.department ?? row.class_name ?? undefined,
+    phone: row.phone_number ?? undefined,
+  };
+}
+
+function mapReportKpi(row: {
+  occupancy: {
+    beds_total: number;
+    beds_occupied: number;
+    occupancy_rate: number;
+    rooms_total: number;
+    rooms_full: number;
+  };
+  applications: {
+    total: number;
+    pending: number;
+    approved: number;
+    checked_in: number;
+    rejected: number;
+  };
+  maintenance: { open: number; overdue: number };
+  billing: { unpaid_invoices: number; outstanding_balance: number };
+}): AdminReportKpi {
+  return {
+    occupancy: {
+      bedsTotal: row.occupancy.beds_total,
+      bedsOccupied: row.occupancy.beds_occupied,
+      occupancyRate: row.occupancy.occupancy_rate,
+      roomsTotal: row.occupancy.rooms_total,
+      roomsFull: row.occupancy.rooms_full,
+    },
+    applications: {
+      total: row.applications.total,
+      pending: row.applications.pending,
+      approved: row.applications.approved,
+      checkedIn: row.applications.checked_in,
+      rejected: row.applications.rejected,
+    },
+    maintenance: row.maintenance,
+    billing: {
+      unpaidInvoices: row.billing.unpaid_invoices,
+      outstandingBalance: row.billing.outstanding_balance,
+    },
+  };
+}
+
+function mapBillingReport(row: {
+  totals: { billed: number; collected: number; outstanding: number };
+  by_status: { payment_status: string; count: number; amount: number }[];
+  monthly: { month: string; billed: number; collected: number }[];
+}): AdminBillingReport {
+  return {
+    totals: row.totals,
+    byStatus: row.by_status.map((item) => ({
+      paymentStatus: item.payment_status,
+      count: item.count,
+      amount: item.amount,
+    })),
+    monthly: row.monthly,
+  };
+}
+
+function monthFromInvoice(invoice: Pick<BillingInvoice, 'period' | 'code'>) {
+  const iso = invoice.period.match(/(\d{4})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}`;
+  const vi = invoice.period.match(/(\d{2})\/(\d{4})/);
+  if (vi) return `${vi[2]}-${vi[1]}`;
+  return invoice.code.replace(/^INV-/, '');
+}
+
+function billingReportFromInvoices(rows: BillingInvoice[]): AdminBillingReport {
+  const totals = rows.reduce(
+    (current, invoice) => {
+      current.billed += parseMockMoney(invoice.amount);
+      current.collected += parseMockMoney(invoice.paidAmount);
+      current.outstanding += parseMockMoney(invoice.balance);
+      return current;
+    },
+    { billed: 0, collected: 0, outstanding: 0 },
+  );
+  const byStatus = Object.values(
+    rows.reduce<Record<string, { paymentStatus: string; count: number; amount: number }>>(
+      (current, invoice) => {
+        const status = invoice.rawStatus ?? invoice.status;
+        current[status] ??= { paymentStatus: status, count: 0, amount: 0 };
+        current[status].count += 1;
+        current[status].amount += parseMockMoney(invoice.amount);
+        return current;
+      },
+      {},
+    ),
+  );
+  const monthly = Object.values(
+    rows.reduce<Record<string, { month: string; billed: number; collected: number }>>(
+      (current, invoice) => {
+        const month = monthFromInvoice(invoice);
+        current[month] ??= { month, billed: 0, collected: 0 };
+        current[month].billed += parseMockMoney(invoice.amount);
+        current[month].collected += parseMockMoney(invoice.paidAmount);
+        return current;
+      },
+      {},
+    ),
+  ).sort((a, b) => b.month.localeCompare(a.month));
+  return { totals, byStatus, monthly };
+}
+
+function mapMaintenanceReport(row: {
+  sla: { open: number; overdue: number; avg_resolution_minutes: number | null };
+  by_category: { category: string; count: number }[];
+  by_status: { status: string; count: number }[];
+}): AdminMaintenanceReport {
+  return {
+    sla: {
+      open: row.sla.open,
+      overdue: row.sla.overdue,
+      avgResolutionMinutes: row.sla.avg_resolution_minutes,
+    },
+    byCategory: row.by_category,
+    byStatus: row.by_status,
+  };
+}
+
+const mockCreatedBuildings: Building[] = [];
+const mockBuildingOverrides = new Map<string, Partial<Building>>();
+
+function mockBuildingKey(building: Pick<Building, 'backendId' | 'code'>) {
+  return building.backendId ?? building.code;
+}
+
+function deriveMockBuildings(): Building[] {
+  const derived = [...new Set(mockState.rooms.map((room) => room.building))].map((building) => {
+    const buildingRooms = mockState.rooms.filter((room) => room.building === building);
+    const code = building.replace(/^Tòa\s+/i, '');
+    const base: Building = {
+      code,
+      name: building,
+      status: 'active',
+      floorsCount: Math.max(...buildingRooms.map((room) => room.floor), 1),
+      roomsCount: buildingRooms.length,
+      bedsCount: buildingRooms.reduce((sum, room) => sum + room.capacity, 0),
+      genderPolicy: buildingRooms.every((room) => room.gender === 'Nam')
+        ? 'male'
+        : buildingRooms.every((room) => room.gender === 'Nữ')
+          ? 'female'
+          : 'other',
+    };
+    return { ...base, ...mockBuildingOverrides.get(code) };
+  });
+  const existingCodes = new Set(derived.map((building) => building.code));
+  return [
+    ...derived,
+    ...mockCreatedBuildings.filter((building) => !existingCodes.has(building.code)),
+  ];
+}
+
+function findMockBuilding(idOrCode: string) {
+  return deriveMockBuildings().find(
+    (building) => building.backendId === idOrCode || building.code === idOrCode,
+  );
+}
+
+function toBackendGender(gender: Room['gender']): UpsertRoomInput['gender'] {
+  return gender === 'Nữ' ? 'female' : 'male';
+}
+
+function toBackendRoomStatus(status: Room['status']): UpsertRoomInput['status'] {
+  if (status === 'maintenance-hold') return 'maintenance';
+  return status;
+}
+
+function roomNoFromCode(code: string) {
+  return code.split('-').at(-1)?.trim() || code.trim();
 }
 
 function pushMockAudit(action: string, target: string, reason: string) {
@@ -473,6 +806,90 @@ export async function fetchRooms(): Promise<Room[]> {
     return [...mockState.rooms];
   }
   return (await http<RoomDto[]>('/api/rooms?pageSize=100')).map(mapRoom);
+}
+
+export async function fetchBuildings(): Promise<Building[]> {
+  if (!live()) {
+    await delay();
+    return deriveMockBuildings();
+  }
+  return (await http<BuildingDto[]>('/api/buildings')).map(mapBuilding);
+}
+
+export async function createBuilding(input: UpsertBuildingInput): Promise<void> {
+  if (!live()) {
+    await delay();
+    mockCreatedBuildings.push({
+      code: input.code,
+      name: input.name,
+      address: input.address,
+      floorsCount: input.floorsCount,
+      genderPolicy: input.genderPolicy,
+      status: input.status,
+      roomsCount: 0,
+      bedsCount: 0,
+    });
+    pushMockAudit('building.create', input.code, input.note ?? 'Tạo tòa nhà mới');
+    return;
+  }
+  await http('/api/buildings', {
+    method: 'POST',
+    body: {
+      code: input.code,
+      name: input.name,
+      address: input.address,
+      floors_count: input.floorsCount,
+      gender_policy: input.genderPolicy,
+      manager_id: input.managerId,
+      status: input.status,
+    },
+  });
+}
+
+export async function updateBuilding(
+  building: Building,
+  input: UpsertBuildingInput,
+): Promise<void> {
+  if (!live()) {
+    await delay();
+    const key = mockBuildingKey(building);
+    const created = mockCreatedBuildings.find((item) => mockBuildingKey(item) === key);
+    const patch: Partial<Building> = {
+      code: input.code,
+      name: input.name,
+      address: input.address,
+      floorsCount: input.floorsCount,
+      genderPolicy: input.genderPolicy,
+      status: input.status,
+    };
+    if (created) {
+      Object.assign(created, patch);
+    } else {
+      mockBuildingOverrides.set(key, patch);
+      if (input.name !== building.name) {
+        mockState.rooms
+          .filter((room) => room.building === building.name)
+          .forEach((room) => {
+            room.building = input.name;
+          });
+      }
+    }
+    pushMockAudit('building.update', input.code, input.note ?? 'Cập nhật tòa nhà');
+    return;
+  }
+  if (!building.backendId) throw new Error('Thiếu mã tòa nhà backend');
+  await http(`/api/buildings/${building.backendId}`, {
+    method: 'PATCH',
+    body: {
+      code: input.code,
+      name: input.name,
+      address: input.address,
+      floors_count: input.floorsCount,
+      gender_policy: input.genderPolicy,
+      manager_id: input.managerId,
+      status: input.status,
+    },
+  });
 }
 
 export async function fetchCurrentRoom(): Promise<{
@@ -904,19 +1321,44 @@ export async function fetchSystemUsers(): Promise<SystemUser[]> {
     return [...mockState.users];
   }
   const rows = await http<
-    { id: string; email?: string; full_name: string; role: string; status: string; updated_at?: string }[]
-  >('/api/profiles?pageSize=50');
+    {
+      id: string;
+      email?: string;
+      full_name: string;
+      role: string;
+      status: string;
+      student_code?: string | null;
+      staff_code?: string | null;
+      department?: string | null;
+      class_name?: string | null;
+      cohort?: string | null;
+      phone_number?: string | null;
+      created_at?: string;
+      updated_at?: string;
+    }[]
+  >('/api/profiles?pageSize=100');
   return rows.map((row) => ({
     backendId: row.id,
     email: row.email ?? row.id,
     name: row.full_name,
-    role: (['student', 'staff', 'admin'].includes(row.role) ? row.role : 'staff') as SystemUser['role'],
+    role: (['student', 'staff', 'admin'].includes(row.role)
+      ? row.role
+      : 'staff') as SystemUser['role'],
     status: row.status === 'active' ? 'active' : 'locked',
-    lastActive: row.updated_at?.slice(0, 16).replace('T', ' ') ?? '-',
+    lastActive:
+      (row.updated_at ?? row.created_at)?.slice(0, 16).replace('T', ' ') ?? '-',
+    code: row.student_code ?? row.staff_code ?? undefined,
+    cohort: row.cohort ?? undefined,
+    unit: row.department ?? row.class_name ?? undefined,
+    phone: row.phone_number ?? undefined,
   }));
 }
 
-export async function setUserLocked(user: SystemUser, locked: boolean, reason: string): Promise<void> {
+export async function setUserLocked(
+  user: SystemUser,
+  locked: boolean,
+  reason: string,
+): Promise<void> {
   if (!live()) {
     await delay();
     const row = mockState.users.find((item) => item.email === user.email);
@@ -928,6 +1370,75 @@ export async function setUserLocked(user: SystemUser, locked: boolean, reason: s
     method: 'PATCH',
     body: { status: locked ? 'locked' : 'active', metadata: { reason } },
   });
+}
+
+export async function setUserRole(
+  user: SystemUser,
+  role: SystemUser['role'],
+  reason: string,
+): Promise<void> {
+  if (!live()) {
+    await delay();
+    const row = mockState.users.find((item) => item.email === user.email);
+    if (row) row.role = role;
+    pushMockAudit('profile.role_update', user.email, reason);
+    return;
+  }
+  if (!user.backendId) throw new Error('Thiếu mã tài khoản backend');
+  if (!['student', 'staff', 'admin'].includes(role)) {
+    throw new Error('Backend hiện chỉ hỗ trợ role student/staff/admin.');
+  }
+  await http(`/api/profiles/${user.backendId}`, {
+    method: 'PATCH',
+    body: { role, metadata: { reason } },
+  });
+}
+
+export async function createSystemUser(input: CreateSystemUserInput): Promise<SystemUser> {
+  if (!live()) {
+    await delay();
+    const created: SystemUser = {
+      email: input.email,
+      name: input.name,
+      role: input.role,
+      status: 'invited',
+      lastActive: '-',
+      code: input.code || undefined,
+    };
+    mockState.users.unshift(created);
+    pushMockAudit('profile.invite', input.email, `Mời ${input.name}`);
+    return created;
+  }
+  const backendRole = input.role;
+  const dto = await http<{
+    id: string;
+    full_name: string;
+    email?: string;
+    role: string;
+    status: string;
+    student_code?: string | null;
+    staff_code?: string | null;
+    created_at?: string;
+  }>('/api/profiles', {
+    method: 'POST',
+    body: {
+      full_name: input.name,
+      email: input.email,
+      role: backendRole,
+      ...(backendRole === 'student'
+        ? { student_code: input.code || undefined }
+        : { staff_code: input.code || undefined }),
+    },
+  });
+  return {
+    backendId: dto.id,
+    email: dto.email ?? input.email,
+    name: dto.full_name,
+    role: (['student', 'staff', 'admin'].includes(dto.role) ? dto.role : 'staff') as SystemUser['role'],
+    status: dto.status === 'active' ? 'active' : 'invited',
+    lastActive: dto.created_at?.slice(0, 16).replace('T', ' ') ?? '-',
+    code: dto.student_code ?? dto.staff_code ?? undefined,
+  };
 }
 
 export async function fetchAllocationRules(): Promise<AllocationRule[]> {
@@ -975,7 +1486,31 @@ export async function setRuleEnabled(
   }
   await http(`/api/allocation-rules/${rule.backendId}`, {
     method: 'PATCH',
-    body: { is_enabled: enabled },
+    body: { is_enabled: enabled, config: { description: rule.description, reason } },
+  });
+}
+
+export async function updateAllocationRule(
+  rule: AllocationRule,
+  input: { weight: number; description: string; reason: string },
+): Promise<void> {
+  if (!live()) {
+    await delay();
+    const row = mockState.rules.find((item) => item.id === rule.id);
+    if (row) {
+      row.weight = input.weight;
+      row.description = input.description;
+    }
+    pushMockAudit('rule.update', rule.id, input.reason);
+    return;
+  }
+  if (!rule.backendId) throw new Error('Thiếu mã rule backend');
+  await http(`/api/allocation-rules/${rule.backendId}`, {
+    method: 'PATCH',
+    body: {
+      weight: input.weight,
+      config: { description: input.description, reason: input.reason },
+    },
   });
 }
 
@@ -1007,6 +1542,96 @@ export async function fetchAuditLogs(): Promise<AuditEntry[]> {
   }));
 }
 
+export async function fetchAdminReportKpi(): Promise<AdminReportKpi> {
+  if (!live()) {
+    await delay();
+    const bedsTotal = mockState.rooms.reduce((sum, room) => sum + room.capacity, 0);
+    const bedsOccupied = mockState.rooms.reduce((sum, room) => sum + room.occupied, 0);
+    const unpaidInvoices = mockState.invoices.filter((invoice) => invoice.status !== 'paid');
+    return {
+      occupancy: {
+        bedsTotal,
+        bedsOccupied,
+        occupancyRate: bedsTotal ? Number(((bedsOccupied / bedsTotal) * 100).toFixed(1)) : 0,
+        roomsTotal: mockState.rooms.length,
+        roomsFull: mockState.rooms.filter((room) => room.status === 'full').length,
+      },
+      applications: {
+        total: mockState.applications.length,
+        pending: mockState.applications.filter((item) =>
+          ['pending', 'reviewing', 'needs-update'].includes(item.status),
+        ).length,
+        approved: mockState.applications.filter((item) =>
+          ['approved', 'suggested', 'waiting-checkin'].includes(item.status),
+        ).length,
+        checkedIn: mockState.applications.filter((item) => item.status === 'checked-in').length,
+        rejected: mockState.applications.filter((item) => item.status === 'rejected').length,
+      },
+      maintenance: {
+        open: mockState.tickets.filter((ticket) => !['closed'].includes(ticket.status)).length,
+        overdue: mockState.tickets.filter((ticket) => ticket.overdue).length,
+      },
+      billing: {
+        unpaidInvoices: unpaidInvoices.length,
+        outstandingBalance: unpaidInvoices.reduce(
+          (sum, invoice) => sum + parseMockMoney(invoice.amount),
+          0,
+        ),
+      },
+    };
+  }
+  return mapReportKpi(await http('/api/reports/kpi'));
+}
+
+export async function fetchAdminBillingReport(): Promise<AdminBillingReport> {
+  if (!live()) {
+    return billingReportFromInvoices(await fetchInvoices());
+  }
+  try {
+    return mapBillingReport(await http('/api/reports/billing'));
+  } catch {
+    return billingReportFromInvoices(await fetchInvoices());
+  }
+}
+
+export async function fetchAdminMaintenanceReport(): Promise<AdminMaintenanceReport> {
+  if (!live()) {
+    await delay();
+    const openTickets = mockState.tickets.filter((ticket) => !['closed'].includes(ticket.status));
+    const byCategory = Object.values(
+      mockState.tickets.reduce<Record<string, { category: string; count: number }>>(
+        (current, ticket) => {
+          const category = ticket.asset ?? 'Khác';
+          current[category] ??= { category, count: 0 };
+          current[category].count += 1;
+          return current;
+        },
+        {},
+      ),
+    );
+    const byStatus = Object.values(
+      mockState.tickets.reduce<Record<string, { status: string; count: number }>>(
+        (current, ticket) => {
+          current[ticket.status] ??= { status: ticket.status, count: 0 };
+          current[ticket.status].count += 1;
+          return current;
+        },
+        {},
+      ),
+    );
+    return {
+      sla: {
+        open: openTickets.length,
+        overdue: mockState.tickets.filter((ticket) => ticket.overdue).length,
+        avgResolutionMinutes: 680,
+      },
+      byCategory,
+      byStatus,
+    };
+  }
+  return mapMaintenanceReport(await http('/api/reports/maintenance'));
+}
+
 // ---------- notifications ----------
 
 export async function fetchNotifications(): Promise<StudentNotification[]> {
@@ -1015,7 +1640,14 @@ export async function fetchNotifications(): Promise<StudentNotification[]> {
     return [...mockState.notifications];
   }
   const rows = await http<
-    { id: string; title: string; body: string; type: string; sent_at?: string; read_at?: string | null }[]
+    {
+      id: string;
+      title: string;
+      body: string;
+      type: string;
+      sent_at?: string;
+      read_at?: string | null;
+    }[]
   >('/api/notifications?pageSize=50');
   return rows.map((row) => ({
     id: row.id,
@@ -1085,21 +1717,152 @@ export async function fetchAdminDashboard(): Promise<AdminDashboard> {
     overdueTickets: staff.urgentTickets,
     slaCompliance:
       staff.openTickets > 0
-        ? Math.max(0, Math.round(((staff.openTickets - staff.urgentTickets) / staff.openTickets) * 100))
+        ? Math.max(
+            0,
+            Math.round(((staff.openTickets - staff.urgentTickets) / staff.openTickets) * 100),
+          )
         : 100,
     auditCount: audit.length,
   };
 }
 
-export async function setRoomMaintenance(room: Room, hold: boolean): Promise<void> {
+export async function setRoomMaintenance(
+  room: Room,
+  hold: boolean,
+  reason?: string,
+): Promise<void> {
   if (!live()) {
     await delay();
     const row = mockState.rooms.find((item) => item.id === room.id);
     if (row) row.status = hold ? 'maintenance-hold' : 'available';
+    pushMockAudit(
+      hold ? 'room.maintenance_hold' : 'room.maintenance_release',
+      room.id,
+      reason ?? '-',
+    );
     return;
   }
   await http(`/api/rooms/${room.backendId ?? room.id}`, {
     method: 'PATCH',
-    body: { status: hold ? 'maintenance' : 'available' },
+    body: { status: hold ? 'maintenance' : 'available', note: reason },
   });
+}
+
+export async function createRoom(input: UpsertRoomInput): Promise<void> {
+  if (!live()) {
+    await delay();
+    const building = findMockBuilding(input.buildingId);
+    const buildingName =
+      building?.name ??
+      (input.roomCode.split('-')[0] ? `Tòa ${input.roomCode.split('-')[0]}` : 'Tòa mới');
+    const room: Room = {
+      buildingId: input.buildingId,
+      id: input.roomCode,
+      building: buildingName,
+      floor: input.floor,
+      capacity: input.capacity,
+      occupied: 0,
+      gender: input.gender === 'female' ? 'Nữ' : 'Nam',
+      status:
+        input.status === 'maintenance' || input.status === 'locked'
+          ? 'maintenance-hold'
+          : 'available',
+      beds: Array.from({ length: input.capacity }, (_, index) => ({
+        id: `${input.roomCode}-B${index + 1}`,
+        status: 'available' as const,
+      })),
+    };
+    mockState.rooms.push(room);
+    pushMockAudit('room.create', input.roomCode, input.note ?? 'Tạo phòng mới');
+    return;
+  }
+  await http('/api/rooms', {
+    method: 'POST',
+    body: {
+      building_id: input.buildingId,
+      floor_no: input.floor,
+      room_no: input.roomNo,
+      room_code: input.roomCode,
+      room_type: `${input.capacity} giường`,
+      capacity: input.capacity,
+      monthly_price: input.monthlyPrice,
+      gender_policy: input.gender,
+      status: input.status,
+      note: input.note,
+    },
+  });
+}
+
+export async function updateRoomDetails(
+  room: Room,
+  input: Partial<UpsertRoomInput> & { reason: string },
+): Promise<void> {
+  if (!live()) {
+    await delay();
+    const row = mockState.rooms.find((item) => item.id === room.id);
+    if (row) {
+      const nextId = input.roomCode?.trim() || row.id;
+      const building = input.buildingId ? findMockBuilding(input.buildingId) : undefined;
+      row.buildingId = input.buildingId ?? row.buildingId;
+      row.building = building?.name ?? row.building;
+      row.id = nextId;
+      row.floor = input.floor ?? row.floor;
+      row.capacity = input.capacity ?? row.capacity;
+      row.gender = input.gender === 'female' ? 'Nữ' : input.gender === 'male' ? 'Nam' : row.gender;
+      row.status =
+        input.status === 'maintenance' || input.status === 'locked'
+          ? 'maintenance-hold'
+          : input.status === 'available'
+            ? 'available'
+            : row.status;
+      row.beds = Array.from({ length: row.capacity }, (_, index) => {
+        const existing = row.beds[index];
+        return existing
+          ? { ...existing, id: `${row.id}-B${index + 1}` }
+          : { id: `${row.id}-B${index + 1}`, status: 'available' as const };
+      });
+    }
+    pushMockAudit('room.update', room.id, input.reason);
+    return;
+  }
+  if (!room.backendId) throw new Error('Thiếu mã phòng backend');
+  await http(`/api/rooms/${room.backendId}`, {
+    method: 'PATCH',
+    body: {
+      floor_no: input.floor,
+      room_no: input.roomNo ?? roomNoFromCode(input.roomCode ?? room.id),
+      room_code: input.roomCode,
+      capacity: input.capacity,
+      gender_policy: input.gender ?? toBackendGender(room.gender),
+      status: input.status ?? toBackendRoomStatus(room.status),
+      note: input.reason,
+    },
+  });
+}
+
+export async function fetchRoomAssets(room: Room): Promise<RoomAsset[]> {
+  if (!live()) {
+    await delay(100);
+    return [
+      { assetCode: `${room.id}-FAN-01`, name: 'Quạt trần', category: 'electric', status: 'ok' },
+      { assetCode: `${room.id}-DESK-01`, name: 'Bàn học', category: 'furniture', status: 'ok' },
+    ];
+  }
+  if (!room.backendId) return [];
+  const rows = await http<
+    {
+      id: string;
+      asset_code: string;
+      name: string;
+      category: string;
+      status: RoomAsset['status'];
+    }[]
+  >(`/api/rooms/${room.backendId}/assets`);
+  return rows.map((row) => ({
+    backendId: row.id,
+    assetCode: row.asset_code,
+    name: row.name,
+    category: row.category,
+    status: row.status,
+  }));
 }
