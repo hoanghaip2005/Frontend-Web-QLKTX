@@ -96,7 +96,10 @@ export function RoleLayout({ role }: RoleLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const items = roleNavItems[role];
-  const current = items.find((item) => location.pathname.startsWith(item.path));
+  const isProfile = location.pathname.startsWith('/profile');
+  const current = isProfile
+    ? { label: 'Hồ sơ cá nhân', path: '/profile' }
+    : items.find((item) => location.pathname.startsWith(item.path));
   const session = getSession();
   const [searchQuery, setSearchQuery] = useState('');
 

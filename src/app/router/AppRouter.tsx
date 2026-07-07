@@ -1,8 +1,16 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import { RoleLayout } from '@/app/layouts/RoleLayout';
+import { appConfig, getSession } from '@/config/app';
 import { LoginPage } from '@/features/auth/login/LoginPage';
 import { ProfilePage } from '@/features/auth/profile/ProfilePage';
+
+// Profile dùng chung layout của role đang đăng nhập (sidebar + topbar giống các trang khác).
+function ProfileRoute() {
+  const session = getSession();
+  if (appConfig.apiMode === 'live' && !session) return <Navigate to="/login" replace />;
+  return <RoleLayout role={session?.role ?? 'student'} />;
+}
 import { AdminAllocationRulesPage } from '@/features/admin/allocation_rules/AdminAllocationRulesPage';
 import { AdminBuildingsRoomsPage } from '@/features/admin/buildings_rooms/AdminBuildingsRoomsPage';
 import { AdminDashboardPage } from '@/features/admin/dashboard/AdminDashboardPage';
@@ -31,7 +39,9 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile" element={<ProfileRoute />}>
+          <Route index element={<ProfilePage />} />
+        </Route>
 
         <Route path="/student" element={<RoleLayout role="student" />}>
           <Route index element={<Navigate to="/student/dashboard" replace />} />
