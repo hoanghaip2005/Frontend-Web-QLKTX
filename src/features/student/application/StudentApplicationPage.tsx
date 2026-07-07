@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -34,10 +35,41 @@ type Step = 'consent' | 'form';
 const statusRank: Partial<Record<ApplicationStatus, number>> = {
   pending: 1,
   reviewing: 1,
+  'needs-update': 2,
+  rejected: 2,
   approved: 2,
   suggested: 3,
   'waiting-checkin': 4,
   'checked-in': 5,
+};
+
+const statusProgress: Partial<Record<ApplicationStatus, number>> = {
+  draft: 10,
+  pending: 35,
+  reviewing: 45,
+  'needs-update': 45,
+  approved: 70,
+  rejected: 100,
+  suggested: 80,
+  'waiting-checkin': 90,
+  'checked-in': 100,
+  cancelled: 100,
+};
+
+const reviewCheckLabel: Record<string, string> = {
+  passed: 'Đạt',
+  missing: 'Cần bổ sung',
+  failed: 'Không đạt',
+  warning: 'Lưu ý',
+  info: 'Đã ghi nhận',
+};
+
+const reviewCheckTone: Record<string, string> = {
+  passed: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  missing: 'border-amber-200 bg-amber-50 text-amber-800',
+  failed: 'border-red-200 bg-red-50 text-red-700',
+  warning: 'border-amber-200 bg-amber-50 text-amber-800',
+  info: 'border-slate-200 bg-slate-50 text-slate-700',
 };
 
 function ApplicationStatusView({
@@ -51,6 +83,19 @@ function ApplicationStatusView({
   const [actionError, setActionError] = useState<string | null>(null);
   const rank = statusRank[application.status] ?? 0;
   const failed = application.status === 'rejected' || application.status === 'needs-update';
+  const progress = application.progressPercent ?? statusProgress[application.status] ?? 0;
+  const reviewChecks =
+    application.reviewChecks && application.reviewChecks.length > 0
+      ? application.reviewChecks
+      : rank >= 2
+        ? [
+            {
+              label: 'Xét duyệt minh chứng',
+              result: failed ? ('warning' as const) : ('passed' as const),
+              note: application.note,
+            },
+          ]
+        : [];
 
   const steps = [
     { label: 'Nộp hồ sơ', done: true },
@@ -86,8 +131,21 @@ function ApplicationStatusView({
             {application.preference ? ` - ${application.preference}` : ''}
           </p>
         </CardHeader>
-        <CardContent>
-          {failed ? (
+        <CardContent className="space-y-5">
+          <div className="rounded-app border border-slate-200 bg-slate-50 px-3 py-3">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-medium text-slate-700">Tiến trình hồ sơ</span>
+              <span className="font-semibold text-slate-950">{progress}%</span>
+            </div>
+            <Progress className="mt-2 h-2" value={progress} />
+            {application.reviewedAt && (
+              <p className="mt-2 text-xs text-slate-500">
+                Cập nhật duyệt: {application.reviewedAt}
+              </p>
+            )}
+          </div>
+
+          {failed && (
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" aria-hidden="true" />
               <AlertTitle>
@@ -95,26 +153,52 @@ function ApplicationStatusView({
               </AlertTitle>
               <AlertDescription>{application.note ?? 'Liên hệ ban quản lý KTX.'}</AlertDescription>
             </Alert>
-          ) : (
-            <ol className="space-y-4">
-              {steps.map((item) => (
-                <li key={item.label} className="flex items-start gap-3">
-                  {item.done ? (
-                    <CheckCircle2
-                      className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600"
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <CircleDashed
-                      className="mt-0.5 h-5 w-5 shrink-0 text-slate-300"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <p className="text-sm font-medium text-slate-900">{item.label}</p>
-                </li>
-              ))}
-            </ol>
           )}
+
+          <ol className="space-y-4">
+            {steps.map((item) => (
+              <li key={item.label} className="flex items-start gap-3">
+                {item.done ? (
+                  <CheckCircle2
+                    className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <CircleDashed
+                    className="mt-0.5 h-5 w-5 shrink-0 text-slate-300"
+                    aria-hidden="true"
+                  />
+                )}
+                <p className="text-sm font-medium text-slate-900">{item.label}</p>
+              </li>
+            ))}
+          </ol>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-950">Kết quả xét duyệt minh chứng</h3>
+            {reviewChecks.length === 0 ? (
+              <p className="mt-2 rounded-app bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                Nhân viên chưa ghi nhận kết quả kiểm tra minh chứng.
+              </p>
+            ) : (
+              <ul className="mt-2 grid gap-2">
+                {reviewChecks.map((check) => (
+                  <li
+                    key={`${check.label}-${check.result}`}
+                    className={`rounded-app border px-3 py-2 text-sm ${reviewCheckTone[check.result] ?? reviewCheckTone.info}`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">{check.label}</span>
+                      <span className="text-xs font-semibold">
+                        {reviewCheckLabel[check.result] ?? reviewCheckLabel.info}
+                      </span>
+                    </div>
+                    {check.note && <p className="mt-1 text-xs opacity-80">{check.note}</p>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -140,9 +224,7 @@ function ApplicationStatusView({
           {(application.status === 'pending' || application.status === 'reviewing') && (
             <p>Ban quản lý sẽ phản hồi trong 3 ngày làm việc.</p>
           )}
-          {application.status === 'approved' && (
-            <p>Hồ sơ đã duyệt. Chờ ban quản lý phân giường.</p>
-          )}
+          {application.status === 'approved' && <p>Hồ sơ đã duyệt. Chờ ban quản lý phân giường.</p>}
           {application.status === 'waiting-checkin' && (
             <p>Đã giữ chỗ. Đến văn phòng KTX để check-in nhận phòng.</p>
           )}
@@ -174,7 +256,11 @@ export function StudentApplicationPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const latest = (applications ?? [])[0] ?? null;
+  const applicationRows = applications ?? [];
+  const latest =
+    applicationRows.find((application) => application.status !== 'cancelled') ??
+    applicationRows[0] ??
+    null;
   const buildingOptions = (buildings ?? []).filter((building) => building.status === 'active');
   const selectedBuilding = buildingOptions.find(
     (building) => (building.backendId ?? building.code) === desiredBuildingId,
@@ -187,7 +273,7 @@ export function StudentApplicationPage() {
           ? 'Cần đính kèm CCCD và giấy xác nhận sinh viên.'
           : !desiredBuildingId
             ? 'Vui lòng chọn tòa nhà mong muốn.'
-          : 'Vui lòng nhập nguyện vọng phòng ở.',
+            : 'Vui lòng nhập nguyện vọng phòng ở.',
       );
       return;
     }
@@ -250,9 +336,7 @@ export function StudentApplicationPage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-brand-600" aria-hidden="true" />
-                  <h2 className="text-base font-semibold text-slate-950">
-                    Xử lý dữ liệu cá nhân
-                  </h2>
+                  <h2 className="text-base font-semibold text-slate-950">Xử lý dữ liệu cá nhân</h2>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4 text-sm leading-6 text-slate-600">
@@ -323,7 +407,10 @@ export function StudentApplicationPage() {
                   </label>
                   <label className="grid gap-2 text-sm font-medium text-slate-700">
                     Khóa / Ngành
-                    <Input value={[profile?.cohort, profile?.className].filter(Boolean).join(' - ')} readOnly />
+                    <Input
+                      value={[profile?.cohort, profile?.className].filter(Boolean).join(' - ')}
+                      readOnly
+                    />
                   </label>
                 </div>
                 <Separator />
@@ -362,7 +449,10 @@ export function StudentApplicationPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {buildingOptions.map((building) => (
-                          <SelectItem key={building.backendId ?? building.code} value={building.backendId ?? building.code}>
+                          <SelectItem
+                            key={building.backendId ?? building.code}
+                            value={building.backendId ?? building.code}
+                          >
                             {building.name} ({building.code})
                           </SelectItem>
                         ))}

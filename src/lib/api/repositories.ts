@@ -36,6 +36,7 @@ import {
 import type {
   AllocationRule,
   Application,
+  ApplicationReviewCheck,
   AssignmentSuggestion,
   AuditEntry,
   Invoice as MockInvoice,
@@ -392,8 +393,7 @@ function mapSystemUser(row: SystemUserDto): SystemUser {
       ? row.role
       : 'staff') as SystemUser['role'],
     status: row.status === 'active' ? 'active' : row.status === 'invited' ? 'invited' : 'locked',
-    lastActive:
-      (row.updated_at ?? row.created_at)?.slice(0, 16).replace('T', ' ') ?? '-',
+    lastActive: (row.updated_at ?? row.created_at)?.slice(0, 16).replace('T', ' ') ?? '-',
     code: row.student_code ?? row.staff_code ?? undefined,
     cohort: row.cohort ?? undefined,
     unit: row.department ?? row.class_name ?? undefined,
@@ -581,6 +581,35 @@ function pushMockAudit(action: string, target: string, reason: string) {
   });
 }
 
+function reviewChecksForDecision(
+  decision: 'approved' | 'rejected' | 'needs-update',
+  reason: string,
+): ApplicationReviewCheck[] {
+  if (decision === 'approved') {
+    return [
+      { label: 'Minh chứng CCCD', result: 'passed' },
+      { label: 'Giấy xác nhận sinh viên', result: 'passed' },
+      { label: 'Điều kiện đăng ký học kỳ', result: 'passed', note: reason },
+    ];
+  }
+  if (decision === 'needs-update') {
+    return [
+      { label: 'Minh chứng cần bổ sung', result: 'missing', note: reason },
+      { label: 'Hồ sơ được phép nộp lại', result: 'warning' },
+    ];
+  }
+  return [
+    { label: 'Điều kiện đăng ký học kỳ', result: 'failed', note: reason },
+    { label: 'Kết luận xét duyệt', result: 'failed' },
+  ];
+}
+
+function progressForReviewDecision(decision: 'approved' | 'rejected' | 'needs-update') {
+  if (decision === 'approved') return 70;
+  if (decision === 'rejected') return 100;
+  return 45;
+}
+
 // ---------- dashboards ----------
 
 export type StudentDashboard = {
@@ -613,10 +642,16 @@ export async function fetchStudentDashboard(): Promise<StudentDashboard> {
     unpaid_invoices: number;
     unread_notifications: number;
   }>('/api/dashboard/student');
+  const dashboardApplication = data.application ? mapApplication(data.application) : null;
+  const activeApplication =
+    dashboardApplication?.status === 'cancelled'
+      ? ((await fetchApplications()).find((application) => application.status !== 'cancelled') ??
+        dashboardApplication)
+      : dashboardApplication;
   return {
     roomLabel: data.room?.room_code ?? null,
     bedLabel: data.room?.bed_code ?? null,
-    application: data.application ? mapApplication(data.application) : null,
+    application: activeApplication,
     openTickets: data.open_tickets,
     unpaidInvoices: data.unpaid_invoices,
     unreadNotifications: data.unread_notifications,
@@ -725,6 +760,9 @@ export async function reviewApplication(
     if (row) {
       row.status = decision;
       row.note = reason;
+      row.reviewChecks = reviewChecksForDecision(decision, reason);
+      row.progressPercent = progressForReviewDecision(decision);
+      row.reviewedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
     }
     pushMockAudit(`application.review.${decision}`, application.id, reason);
     return;
@@ -733,6 +771,8 @@ export async function reviewApplication(
     method: 'POST',
     body: {
       status: reviewStatusForDecision[decision],
+      review_checks: reviewChecksForDecision(decision, reason),
+      progress_percent: progressForReviewDecision(decision),
       staff_note: reason,
       ...(decision === 'rejected' ? { rejection_reason: reason } : {}),
     },

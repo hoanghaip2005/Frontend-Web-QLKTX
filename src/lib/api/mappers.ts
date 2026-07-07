@@ -4,6 +4,7 @@
 import type {
   Application,
   ApplicationEvidence,
+  ApplicationReviewCheck,
   ApplicationStatus,
   AssignmentSuggestion,
   Room,
@@ -41,7 +42,14 @@ export type ApplicationDto = {
     uploaded_at?: string;
     uploadedAt?: string;
   }[];
+  review_checks?: {
+    label?: string;
+    result?: string;
+    note?: string;
+  }[];
+  progress_percent?: number;
   submitted_at?: string | null;
+  reviewed_at?: string | null;
   staff_note?: string | null;
   rejection_reason?: string | null;
   assigned_room_code?: string | null;
@@ -163,8 +171,23 @@ function mapApplicationEvidence(
   };
 }
 
+function mapApplicationReviewCheck(
+  check: NonNullable<ApplicationDto['review_checks']>[number],
+  index: number,
+): ApplicationReviewCheck {
+  const result = ['passed', 'missing', 'failed', 'warning', 'info'].includes(check.result ?? '')
+    ? check.result
+    : 'info';
+  return {
+    label: check.label ?? `Mục kiểm tra ${index + 1}`,
+    result: result as ApplicationReviewCheck['result'],
+    note: check.note,
+  };
+}
+
 export function mapApplication(dto: ApplicationDto): Application {
   const evidenceDocuments = (dto.documents ?? []).map(mapApplicationEvidence);
+  const reviewChecks = (dto.review_checks ?? []).map(mapApplicationReviewCheck);
   return {
     backendId: dto.id,
     id: dto.application_code,
@@ -184,6 +207,9 @@ export function mapApplication(dto: ApplicationDto): Application {
       .join(', '),
     evidence: (dto.documents ?? []).map((doc) => doc.name ?? 'tài liệu'),
     evidenceDocuments,
+    reviewChecks,
+    progressPercent: dto.progress_percent,
+    reviewedAt: dto.reviewed_at?.slice(0, 16).replace('T', ' ') ?? undefined,
     status: toUiApplicationStatus(dto.status),
     submittedAt: dto.submitted_at?.slice(0, 16).replace('T', ' ') ?? '-',
     note: dto.rejection_reason ?? dto.staff_note ?? undefined,

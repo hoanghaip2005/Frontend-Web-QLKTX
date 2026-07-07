@@ -44,6 +44,12 @@ export type ApplicationEvidence = {
   uploadedAt?: string;
 };
 
+export type ApplicationReviewCheck = {
+  label: string;
+  result: 'passed' | 'missing' | 'failed' | 'warning' | 'info';
+  note?: string;
+};
+
 export type Application = {
   /** Backend UUID when data comes from the API; absent in pure mock rows. */
   backendId?: string;
@@ -59,6 +65,9 @@ export type Application = {
   desiredBuildingId?: string;
   evidence: string[];
   evidenceDocuments?: ApplicationEvidence[];
+  reviewChecks?: ApplicationReviewCheck[];
+  progressPercent?: number;
+  reviewedAt?: string;
   status: ApplicationStatus;
   submittedAt: string;
   note?: string;
