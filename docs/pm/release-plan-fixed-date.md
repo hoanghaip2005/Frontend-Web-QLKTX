@@ -10,6 +10,10 @@
 | Updated | 2026-06-21 |
 | Source files | `docs/product-backlog.md`; `docs/definition-of-done.md`; `docs/proof-of-concept.md`; Jira board `SLMBOCDQKN`; [D07 Agile Planning](https://nndkhoa.github.io/project-management-docs/d07/index.html#2) |
 
+## Tóm tắt
+
+Kế hoạch fixed-date: chốt ngày 2026-08-05, thả nổi scope. 4 sprint 2 tuần (29/21/16/8 SP), velocity range 16-21 SP/sprint → 74 SP Must nằm giữa 2 đường will-have (64 SP) và might-have (84 SP). Will-have = 13 Must story; might-have = US-007/US-015; won't-have = 6 story Phase 2. Nguyên tắc cắt scope: bỏ might-have trước, bảo vệ 2 luồng demo-critical.
+
 ## Purpose
 
 This document defines the fixed-date release plan for DormCare Hub MVP. Theo [D07 Agile Planning](https://nndkhoa.github.io/project-management-docs/d07/index.html#2), fixed-date planning giữ ngày phát hành cố định và để scope linh hoạt. Nhóm dùng velocity range để phân loại will-have, might-have và won't-have thay vì cam kết toàn bộ backlog.

@@ -44,6 +44,10 @@ export const statusMeta: Record<string, StatusMeta> = {
   'maintenance-hold': { label: 'Khóa bảo trì', tone: 'warning' },
   maintenance: { label: 'Bảo trì', tone: 'warning' },
   locked: { label: 'Đã khóa', tone: 'danger' },
+  ok: { label: 'Tốt', tone: 'success' },
+  broken: { label: 'Hỏng', tone: 'danger' },
+  missing: { label: 'Thiếu', tone: 'danger' },
+  retired: { label: 'Ngưng dùng', tone: 'neutral' },
 
   urgent: { label: 'Khẩn cấp', tone: 'danger' },
   high: { label: 'Cao', tone: 'warning' },

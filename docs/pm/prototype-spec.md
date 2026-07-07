@@ -10,6 +10,10 @@
 | Updated | 2026-06-03 |
 | Source files | `Group3_DormCare_Hub_Product_Backlog.docx`; `Group3_DormCare_Hub_Biên Bản Họp.docx`; `Group3 _DormCare_Hub Tầm Nhìn & Phạm Vi Dự Án.docx` |
 
+## Tóm tắt
+
+Đặc tả Figma prototype MVP: 10 màn hình phủ 13 Must story, flow chính 11 bước từ login tới dashboard, bộ component chuẩn (sidebar, KPI card, data table, status badge, stepper, rule explanation panel, override modal) và sample data thống nhất (SV2302700162, APP-2026-001, A-302-B4, MT-2026-011). Mỗi màn có acceptance criteria riêng. Quyết định web-first: desktop 1440x1024 là chuẩn, mobile frame chỉ tham chiếu.
+
 ## Prototype Goal
 
 Create a Figma prototype for the DormCare Hub MVP end-to-end flow. The prototype should validate whether users can understand and move through the core operations before the team implements the web app.

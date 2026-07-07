@@ -10,6 +10,10 @@
 | Updated | 2026-06-02 |
 | Source files | `Group3_DormCare_Hub_Hiến Chương Dự Án.docx`; `Group3 _DormCare_Hub Tầm Nhìn & Phạm Vi Dự Án.docx`; `Group3_DormCare_Hub_Báo Cáo Nghiên Cứu Khả Thi.docx`; `Group3_DormCare_Hub_Project_Idea_SWOT.docx` |
 
+## Tóm tắt
+
+DormCare Hub thay thế Excel/Zalo/giấy tờ bằng một nền tảng quản lý KTX tập trung cho 5 nhóm người dùng (sinh viên, staff, bảo trì, CTSV/lãnh đạo, admin). MVP gói gọn trong vòng đời: đăng ký → duyệt → phân phòng theo rule → check-in/out, cộng với sửa chữa theo SLA và dashboard KPI hành động được. 5 mục tiêu chiến lược có KPI định lượng (≥90% hồ sơ xử lý trong hệ thống, ≥95% sổ giường đúng, ≥80% gợi ý hữu ích...). Phạm vi loại trừ rõ: SIS, payment gateway, native mobile.
+
 ## Project Summary
 
 DormCare Hub is a centralized dormitory management platform for schools. It replaces scattered Excel files, paper records, Zalo messages, and manually updated reports with a role-based system for student dormitory applications, approval, room/bed allocation, check-in/out, maintenance tickets, and operational dashboards.

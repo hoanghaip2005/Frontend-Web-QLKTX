@@ -4,11 +4,15 @@
 | --- | --- |
 | Project | DormCare Hub - School Dormitory Management System |
 | Document ID | DCH-PMO-POC |
-| Version | 1.0 |
-| Status | Draft - ready to execute |
+| Version | 1.1 |
+| Status | **Executed - PASS (2026-07-06)** |
 | Owner | Group 3 |
-| Updated | 2026-06-02 |
+| Updated | 2026-07-06 |
 | Source files | `Group3_DormCare_Hub_Báo Cáo Nghiên Cứu Khả Thi.docx`; `Group3_DormCare_Hub_Product_Backlog.docx`; instructor PoC example |
+
+## Tóm tắt
+
+PoC kiểm chứng 3 giả định rủi ro nhất trước khi build: (H1-H2) rule engine phân phòng hữu ích ≥80% và giải thích được 100%; (H3-H4) QR gắn đúng ngữ cảnh ≥95% và SLA state đúng 100%; (H5) KPI dashboard tính từ cùng nguồn dữ liệu. 9 test case TC-01→TC-09 với ngưỡng pass rõ. **Kết quả thực thi: PASS toàn bộ trên backend production** — xem mục "Kết quả thực thi" cuối tài liệu, gồm cả 1 lỗi TC-03 phát hiện thật và đã sửa.
 
 ## PoC Goal
 
@@ -125,3 +129,21 @@ The PoC focuses on three risks:
 | Maintenance and SLA | US-011, US-012, US-013 | Maintenance Ticket, SLA Board |
 | Dashboard | US-014, US-015 | Operations Dashboard |
 
+
+## Kết quả thực thi (2026-07-06)
+
+PoC được thực thi vượt kế hoạch ban đầu: thay vì script mô phỏng, các giả định được kiểm chứng **trên chính backend production** (Express + PostgreSQL/Supabase, deploy Azure) bằng bộ E2E tự động 30 test và kịch bản chạy tay 29/30 bước trên môi trường thật.
+
+| TC | Kết quả | Bằng chứng |
+| --- | --- | --- |
+| TC-01 Gợi ý phòng chuẩn | ✅ PASS | Suggestions trả đúng phòng khả dụng theo giới tính/sức chứa (E2E + demo run KB1) |
+| TC-02 Ưu tiên chính sách | ✅ PASS | Rule `policy_priority` cộng điểm khi `priority_score ≥ 50` |
+| TC-03 Loại giường không khả dụng | ⚠️ **FAIL lần đầu → FIXED → PASS** | Engine từng gợi ý giường đã có người do so mã giường thiếu chuẩn hóa prefix; phát hiện qua test UI thật, fix tại commit `fix(api): SQL param type conflicts and suggestion bed occupancy check`, retest PASS |
+| TC-04 Giải thích gợi ý | ✅ PASS | 100% suggestion kèm reason codes (ví dụ thật: "Same cohort as 1 resident(s); Same department as 1 resident(s)") |
+| TC-05 Override có ghi vết | ✅ PASS | `override_reason` bắt buộc, audit severity high |
+| TC-06 QR đúng ngữ cảnh | ✅ PASS | `POST /api/qr/scan` map đúng asset; SV bị chặn khi quét tài sản ngoài phòng mình |
+| TC-07 SLA workflow | ✅ PASS | Vòng đời new→assigned→waiting_confirm→reopened→completed chạy đúng; overdue tính runtime qua `v_ticket_sla` |
+| TC-08 KPI occupancy | ✅ PASS | `beds_total/beds_occupied` khớp `v_room_occupancy` |
+| TC-09 KPI hành động được | ✅ PASS | Mỗi KPI card dẫn tới danh sách bản ghi tương ứng |
+
+**Quyết định theo Decision Criteria:** "All thresholds pass → Continue MVP build" — đã tiếp tục và hoàn thành. Ghi chú trung thực: TC-03 chính là minh chứng giá trị của PoC/testing — lỗi chỉ bộc lộ khi chạy dữ liệu thật, nếu chỉ demo mock sẽ không bao giờ thấy.

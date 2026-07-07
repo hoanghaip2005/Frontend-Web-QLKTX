@@ -3,6 +3,7 @@
 
 import type {
   Application,
+  ApplicationEvidence,
   ApplicationStatus,
   AssignmentSuggestion,
   Room,
@@ -24,10 +25,22 @@ export type ApplicationDto = {
   status: string;
   priority_note?: string | null;
   priority_score?: number;
+  desired_building_id?: string | null;
   desired_building_code?: string | null;
   desired_room_type?: string | null;
   lifestyle_needs?: string[];
-  documents?: { name?: string }[];
+  documents?: {
+    name?: string;
+    fileName?: string;
+    url?: string;
+    href?: string;
+    path?: string;
+    size?: string | number;
+    type?: string;
+    mimeType?: string;
+    uploaded_at?: string;
+    uploadedAt?: string;
+  }[];
   submitted_at?: string | null;
   staff_note?: string | null;
   rejection_reason?: string | null;
@@ -39,6 +52,7 @@ export type ApplicationDto = {
 
 export type RoomDto = {
   id: string;
+  building_id?: string;
   room_code: string;
   building_code: string;
   building_name?: string;
@@ -132,7 +146,25 @@ export const reviewStatusForDecision = {
 
 // ---------- mappers ----------
 
+function mapApplicationEvidence(
+  doc: NonNullable<ApplicationDto['documents']>[number],
+  index: number,
+): ApplicationEvidence {
+  const path = doc.path;
+  const url = doc.url ?? doc.href;
+  const fallbackName = path?.split('/').pop() ?? `Minh chứng ${index + 1}`;
+  return {
+    name: doc.name ?? doc.fileName ?? fallbackName,
+    url,
+    path,
+    size: typeof doc.size === 'number' ? `${doc.size.toLocaleString('vi-VN')} bytes` : doc.size,
+    type: doc.type ?? doc.mimeType,
+    uploadedAt: doc.uploaded_at ?? doc.uploadedAt,
+  };
+}
+
 export function mapApplication(dto: ApplicationDto): Application {
+  const evidenceDocuments = (dto.documents ?? []).map(mapApplicationEvidence);
   return {
     backendId: dto.id,
     id: dto.application_code,
@@ -142,6 +174,8 @@ export function mapApplication(dto: ApplicationDto): Application {
     cohort: '',
     major: '',
     priority: dto.priority_note ?? 'Không',
+    desiredBuildingId: dto.desired_building_id ?? undefined,
+    desiredBuildingCode: dto.desired_building_code ?? undefined,
     preference: [
       dto.desired_building_code ? `Tòa ${dto.desired_building_code}` : null,
       ...(dto.lifestyle_needs ?? []),
@@ -149,6 +183,7 @@ export function mapApplication(dto: ApplicationDto): Application {
       .filter(Boolean)
       .join(', '),
     evidence: (dto.documents ?? []).map((doc) => doc.name ?? 'tài liệu'),
+    evidenceDocuments,
     status: toUiApplicationStatus(dto.status),
     submittedAt: dto.submitted_at?.slice(0, 16).replace('T', ' ') ?? '-',
     note: dto.rejection_reason ?? dto.staff_note ?? undefined,
@@ -172,6 +207,7 @@ export function mapRoom(dto: RoomDto): Room {
   });
   return {
     backendId: dto.id,
+    buildingId: dto.building_id,
     id: dto.room_code,
     building: dto.building_name ?? `Tòa ${dto.building_code}`,
     floor: dto.floor_no,

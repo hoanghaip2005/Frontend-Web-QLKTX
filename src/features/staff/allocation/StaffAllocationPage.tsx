@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, Info, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, Eye, Info, ShieldAlert, UserPlus } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -41,7 +41,15 @@ import {
   fetchSuggestion,
 } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import type { Application, AssignmentSuggestion } from '@/mocks/data/dormData';
+import type { Application, AssignmentSuggestion, Bed, Room } from '@/mocks/data/dormData';
+
+type AvailableBedOption = {
+  id: string;
+  roomId?: string;
+  room: string;
+  building: string;
+  bed: Bed;
+};
 
 export function StaffAllocationPage() {
   const { data: rooms, loading: roomsLoading, error: roomsError } = useAsyncData(fetchRooms);
@@ -70,11 +78,13 @@ export function StaffAllocationPage() {
   const confirmedBed = selectedAppKey ? (confirmedByApp[selectedAppKey] ?? null) : null;
   const [overriding, setOverriding] = useState(false);
   const [overrideBed, setOverrideBed] = useState('');
+  const [overrideRoomId, setOverrideRoomId] = useState<string | undefined>();
   const [overrideReason, setOverrideReason] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const applyAssign = async (override?: { bed: string; reason: string }) => {
+  const applyAssign = async (override?: { bed: string; reason: string; roomId?: string }) => {
     if (!selectedApp || !suggestion) return;
     setSaving(true);
     setActionError(null);
@@ -86,6 +96,7 @@ export function StaffAllocationPage() {
       }));
       setOverriding(false);
       setOverrideBed('');
+      setOverrideRoomId(undefined);
       setOverrideReason('');
       reloadApps();
     } catch (error) {
@@ -95,11 +106,6 @@ export function StaffAllocationPage() {
     }
   };
 
-  const availableBeds = (rooms ?? [])
-    .flatMap((room) => room.beds)
-    .filter((bed) => bed.status === 'available')
-    .map((bed) => bed.id);
-
   const [buildingFilter, setBuildingFilter] = useState('all');
   const [roomStatusFilter, setRoomStatusFilter] = useState('all');
   const buildingOptions = [...new Set((rooms ?? []).map((room) => room.building))].sort();
@@ -108,6 +114,36 @@ export function StaffAllocationPage() {
       (buildingFilter === 'all' || room.building === buildingFilter) &&
       (roomStatusFilter === 'all' || room.status === roomStatusFilter),
   );
+  const availableBedOptions: AvailableBedOption[] = (rooms ?? []).flatMap((room) =>
+    room.beds
+      .filter((bed) => bed.status === 'available')
+      .map((bed) => ({
+        id: bed.id,
+        roomId: room.backendId,
+        room: room.id,
+        building: room.building,
+        bed,
+      })),
+  );
+
+  const setOverrideSelection = (bedId: string) => {
+    const option = availableBedOptions.find((item) => item.id === bedId);
+    setOverrideBed(bedId);
+    setOverrideRoomId(option?.roomId);
+  };
+
+  const openManualAssign = (room: Room, bed: Bed) => {
+    if (!selectedApp || !suggestion) {
+      setSelectedRoom(room);
+      setActionError('Chọn hoặc duyệt một hồ sơ trước khi phân giường từ sổ.');
+      return;
+    }
+    setActionError(null);
+    setOverrideBed(bed.id);
+    setOverrideRoomId(room.backendId);
+    setOverrideReason(`Phân thủ công từ sổ giường: chọn ${bed.id} cho ${selectedApp.studentName}.`);
+    setOverriding(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -220,7 +256,12 @@ export function StaffAllocationPage() {
                           <Button
                             type="button"
                             variant="secondary"
-                            onClick={() => setOverriding(true)}
+                            onClick={() => {
+                              setOverrideBed('');
+                              setOverrideRoomId(undefined);
+                              setOverrideReason('');
+                              setOverriding(true);
+                            }}
                           >
                             <ShieldAlert className="h-4 w-4" aria-hidden="true" />
                             Override (cần lý do)
@@ -323,6 +364,11 @@ export function StaffAllocationPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="rounded-app border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                  {selectedApp
+                    ? `Đang thao tác cho ${selectedApp.id} - ${selectedApp.studentName}. Bấm giường trống để phân thủ công/override.`
+                    : 'Sổ giường cho phép xem chi tiết phòng. Muốn phân giường trực tiếp, hãy duyệt và chọn một hồ sơ trước.'}
+                </div>
                 {ledgerRooms.length === 0 && (
                   <EmptyState
                     title="Không có phòng khớp bộ lọc"
@@ -342,6 +388,15 @@ export function StaffAllocationPage() {
                       <p className="text-sm text-slate-600">
                         {room.occupied}/{room.capacity} giường
                       </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedRoom(room)}
+                      >
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                        Chi tiết
+                      </Button>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {room.beds.map((bed) => (
@@ -352,6 +407,17 @@ export function StaffAllocationPage() {
                           <span className="font-mono">{bed.id.split('-').pop()}</span>
                           <StatusBadge status={bed.status} />
                           {bed.occupant && <span className="text-slate-600">{bed.occupant}</span>}
+                          {bed.status === 'available' && (
+                            <Button
+                              type="button"
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => openManualAssign(room, bed)}
+                            >
+                              <UserPlus className="h-3 w-3" aria-hidden="true" />
+                              Phân
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -363,7 +429,17 @@ export function StaffAllocationPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={overriding} onOpenChange={setOverriding}>
+      <Dialog
+        open={overriding}
+        onOpenChange={(open) => {
+          setOverriding(open);
+          if (!open) {
+            setOverrideBed('');
+            setOverrideRoomId(undefined);
+            setOverrideReason('');
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Override phân giường cho {selectedApp?.id}</DialogTitle>
@@ -374,17 +450,17 @@ export function StaffAllocationPage() {
           </DialogHeader>
           <div className="grid gap-2 text-sm font-medium text-slate-700">
             Giường thay thế *
-            {availableBeds.length > 0 ? (
-              <Select value={overrideBed} onValueChange={setOverrideBed}>
+            {availableBedOptions.length > 0 ? (
+              <Select value={overrideBed} onValueChange={setOverrideSelection}>
                 <SelectTrigger aria-label="Chọn giường thay thế">
                   <SelectValue placeholder="Chọn giường còn trống" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableBeds
-                    .filter((bed) => bed !== suggestion?.suggestedBed)
-                    .map((bed) => (
-                      <SelectItem key={bed} value={bed}>
-                        {bed}
+                  {availableBedOptions
+                    .filter((option) => option.id !== suggestion?.suggestedBed)
+                    .map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.id} - {option.building}
                       </SelectItem>
                     ))}
                 </SelectContent>
@@ -393,7 +469,10 @@ export function StaffAllocationPage() {
               <Input
                 placeholder="Nhập mã giường, ví dụ A-201-B3"
                 value={overrideBed}
-                onChange={(event) => setOverrideBed(event.target.value)}
+                onChange={(event) => {
+                  setOverrideBed(event.target.value);
+                  setOverrideRoomId(undefined);
+                }}
               />
             )}
           </div>
@@ -412,11 +491,81 @@ export function StaffAllocationPage() {
             <Button
               type="button"
               disabled={!overrideBed || !overrideReason.trim() || saving}
-              onClick={() => void applyAssign({ bed: overrideBed, reason: overrideReason })}
+              onClick={() =>
+                void applyAssign({ bed: overrideBed, reason: overrideReason, roomId: overrideRoomId })
+              }
             >
               {saving ? 'Đang lưu...' : 'Ghi nhận override'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={selectedRoom !== null}
+        onOpenChange={(open) => !open && setSelectedRoom(null)}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết phòng {selectedRoom?.id}</DialogTitle>
+            <DialogDescription>
+              Xem tình trạng giường. Giường trống có thể được chọn để phân thủ công cho hồ sơ đang thao tác.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRoom && (
+            <div className="space-y-4">
+              <dl className="grid gap-2 text-sm sm:grid-cols-4">
+                {[
+                  ['Tòa', selectedRoom.building],
+                  ['Tầng', selectedRoom.floor],
+                  ['Giới tính', selectedRoom.gender],
+                  ['Sức chứa', `${selectedRoom.occupied}/${selectedRoom.capacity}`],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-app bg-slate-50 px-3 py-2">
+                    <dt className="text-xs text-slate-500">{label}</dt>
+                    <dd className="mt-1 font-medium text-slate-900">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {selectedRoom.beds.map((bed) => (
+                  <div
+                    key={bed.id}
+                    className="flex items-center justify-between gap-3 rounded-app border border-slate-200 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm font-medium text-slate-900">{bed.id}</p>
+                      <p className="mt-1 truncate text-xs text-slate-500">
+                        {bed.occupant ?? 'Chưa có người ở'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={bed.status} />
+                      {bed.status === 'available' && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setSelectedRoom(null);
+                            openManualAssign(selectedRoom, bed);
+                          }}
+                        >
+                          <UserPlus className="h-4 w-4" aria-hidden="true" />
+                          Phân
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {!selectedApp && (
+                <p className="rounded-app bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  Chưa có hồ sơ được chọn. Duyệt hồ sơ trước, sau đó quay lại sổ giường để phân thủ công.
+                </p>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

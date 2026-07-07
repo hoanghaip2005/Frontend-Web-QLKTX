@@ -10,6 +10,10 @@
 | Updated | 2026-07-03 |
 | Source files | `docs/product-backlog.md`; `docs/prototype-spec.md`; `D:\QLKTX\Frontend-Web-QLKTX`; `D:\QLKTX\Backend-QLKTX` |
 
+## Tóm tắt
+
+Ma trận truy vết 13 Must story → màn hình React (route) → API endpoint → bằng chứng test (E2E-API 30 test + UI-flow có xác minh DB). Kèm trạng thái Should-have/Phase 2/Deferred và known gaps trung thực (dev-auth bypass, bed ledger dạng đếm). Dùng cho review DoD và chuẩn bị vấn đáp.
+
 ## Purpose
 
 Bảng truy vết từ user story (Must Have MVP) tới màn hình React, endpoint API và bằng chứng kiểm thử. Dùng để review Definition of Done và chuẩn bị demo.

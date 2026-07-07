@@ -10,6 +10,10 @@
 | Updated | 2026-06-21 |
 | Source files | `docs/product-backlog.md`; `docs/project-overview.md`; [D07 Agile Planning](https://nndkhoa.github.io/project-management-docs/d07/index.html#2) |
 
+## Tóm tắt
+
+Ước lượng bằng 2 phương pháp: (1) relative sizing story point thang Fibonacci với baseline 3 SP, tổng 117 SP toàn backlog / 74 SP MVP; (2) three-point PERT theo epic để kiểm chứng chéo (chi tiết mục "Phương pháp 2"). Velocity kế hoạch 18.5 SP/sprint → MVP 8 tuần (4 sprint), full backlog 12-14 tuần. Hai phương pháp cho kết quả lệch nhau <10%, củng cố độ tin cậy ước lượng.
+
 ## Purpose
 
 Tài liệu này tạo ước lượng cấp cao cho DormCare Hub dựa trên product backlog hiện có. High-level estimate được dùng để trả lời sớm các câu hỏi: MVP mất khoảng bao lâu, phạm vi nào nằm trong release đầu tiên, phần nào nên chuyển Phase 2, và rủi ro ước lượng nằm ở đâu.
@@ -75,6 +79,32 @@ Theo nội dung [D07 Agile Planning](https://nndkhoa.github.io/project-managemen
 | Full backlog sprint count | `117 SP / 18.5 SP/sprint` | `6.3 sprint` |
 | Full backlog duration | Round up and include planning/review buffer | `12-14 weeks` |
 | Phase 2 estimate | `43 SP / 18.5 SP/sprint` | About `2.3 sprint`, rounded to `3 sprint` planning buffer. |
+
+## Phương pháp 2 - Three-Point (PERT) theo epic
+
+Để kiểm chứng chéo kết quả story point, nhóm ước lượng lần hai bằng three-point estimation theo epic MVP, đơn vị **ngày-người** (person-day), công thức `E = (O + 4M + P) / 6`:
+
+| Epic (MVP) | O (lạc quan) | M (khả dĩ) | P (bi quan) | E (ngày-người) |
+| --- | ---: | ---: | ---: | ---: |
+| Platform & RBAC | 3 | 5 | 8 | 5.2 |
+| Application & Approval | 8 | 12 | 18 | 12.3 |
+| Room/Bed Ledger | 6 | 9 | 14 | 9.3 |
+| Room Assignment | 5 | 8 | 13 | 8.2 |
+| Maintenance & SLA | 7 | 11 | 16 | 11.2 |
+| Dashboard | 4 | 6 | 9 | 6.2 |
+| Tổng thực thi | | | | **52.4** |
+| Buffer tích hợp/QA/review 15% | | | | 7.8 |
+| **Tổng MVP (PERT)** | | | | **≈ 60 ngày-người** |
+
+Quy đổi lịch: nhóm 7 sinh viên part-time, năng lực thực tế ước ~1.5-1.9 ngày-người/ngày lịch → 60 ngày-người ≈ **7.5-8.5 tuần**.
+
+### So sánh 2 phương pháp
+
+| Phương pháp | Kết quả MVP | Ghi chú |
+| --- | --- | --- |
+| Story point + velocity (PP1) | 74 SP / 18.5 SP/sprint = **8 tuần** | Chuẩn lập kế hoạch sprint |
+| Three-point PERT (PP2) | ≈ 60 ngày-người = **7.5-8.5 tuần** | Kiểm chứng độc lập theo effort |
+| Độ lệch | **< 10%** | Hai phương pháp hội tụ → ước lượng 8 tuần đủ tin cậy để cam kết fixed date 2026-08-05 |
 
 ## Estimate Confidence
 

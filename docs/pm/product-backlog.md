@@ -10,6 +10,10 @@
 | Updated | 2026-06-02 |
 | Source files | `Group3_DormCare_Hub_Product_Backlog.docx`; `Group3 _DormCare_Hub Tầm Nhìn & Phạm Vi Dự Án.docx` |
 
+## Tóm tắt
+
+Backlog 24 item / 117 SP, chia theo MoSCoW: 13 Must (74 SP) cho MVP, 7 Should (38 SP) cho Phase 2, 1 Could (5 SP), 3 Won't (deferred). Hai luồng demo-critical: hồ sơ (US-001→US-010) và sửa chữa + dashboard (US-011→US-014). Mỗi story có traceability tới màn hình prototype và điều kiện vào sprint (acceptance criteria + test data rõ).
+
 ## Backlog Summary
 
 The backlog contains 24 items and 117 story points. The MVP is scoped around two demo-critical flows:

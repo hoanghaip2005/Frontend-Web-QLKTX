@@ -10,6 +10,10 @@
 | Updated | 2026-06-21 |
 | Source files | `docs/project-overview.md`; `docs/product-backlog.md`; `docs/proof-of-concept.md`; [D07 Agile Planning](https://nndkhoa.github.io/project-management-docs/d07/index.html#2) |
 
+## Tóm tắt
+
+3 release tăng dần theo MRF: Release 1 MVP (74 SP, 2026-06-10 → 2026-08-05) demo trọn vòng đời KTX; Release 2 Pilot Readiness (43 SP: QR, drilldown, fees/debt, notification, import/audit/export); Release 3 tích hợp ngoài (SIS, payment, native app) chờ phê duyệt. Mỗi MRF có decision gate riêng; review cadence gắn với PoC, sprint review và ngày release.
+
 ## Purpose
 
 Product roadmap mô tả chuỗi các bản phát hành để đạt tầm nhìn sản phẩm DormCare Hub. Theo [D07 Agile Planning](https://nndkhoa.github.io/project-management-docs/d07/index.html#2), mỗi bản phát hành nên tập trung vào một nhóm Minimum Releasable Features (MRFs) có giá trị rõ ràng và được stakeholder đồng thuận.

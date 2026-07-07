@@ -704,7 +704,8 @@ export function AdminUsersPage() {
           <DialogHeader>
             <DialogTitle>Mời người dùng</DialogTitle>
             <DialogDescription>
-              Mock mode sẽ thêm lời mời vào danh sách. Live mode cần backend tạo profile/auth user.
+              Live mode tạo profile qua backend. Email phải hợp lệ theo rule backend và mọi thay đổi
+              tiếp theo được ghi audit.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">

@@ -35,6 +35,15 @@ export const currentStudent = {
   bed: 'A-302-B4',
 } as const;
 
+export type ApplicationEvidence = {
+  name: string;
+  url?: string;
+  path?: string;
+  size?: string;
+  type?: string;
+  uploadedAt?: string;
+};
+
 export type Application = {
   /** Backend UUID when data comes from the API; absent in pure mock rows. */
   backendId?: string;
@@ -46,7 +55,10 @@ export type Application = {
   major: string;
   priority: string;
   preference: string;
+  desiredBuildingCode?: string;
+  desiredBuildingId?: string;
   evidence: string[];
+  evidenceDocuments?: ApplicationEvidence[];
   status: ApplicationStatus;
   submittedAt: string;
   note?: string;
@@ -64,6 +76,7 @@ export const applications: Application[] = [
     major: 'Công nghệ thông tin',
     priority: 'Không',
     preference: 'Tòa A, phòng yên tĩnh',
+    desiredBuildingCode: 'A',
     evidence: ['CCCD_2mat.pdf', 'GiayXacNhanSV.pdf'],
     status: 'pending',
     submittedAt: '2026-06-28 09:12',
@@ -77,6 +90,7 @@ export const applications: Application[] = [
     major: 'Kế toán',
     priority: 'Hộ nghèo',
     preference: 'Tòa B, gần thư viện',
+    desiredBuildingCode: 'B',
     evidence: ['CCCD_2mat.pdf', 'SoHoNgheo.pdf'],
     status: 'pending',
     submittedAt: '2026-06-28 10:40',
@@ -90,6 +104,7 @@ export const applications: Application[] = [
     major: 'Cơ khí',
     priority: 'Không',
     preference: 'Tòa A, cùng phòng bạn cùng lớp',
+    desiredBuildingCode: 'A',
     evidence: ['CCCD_2mat.pdf'],
     status: 'reviewing',
     submittedAt: '2026-06-27 15:02',
@@ -103,6 +118,7 @@ export const applications: Application[] = [
     major: 'Ngôn ngữ Anh',
     priority: 'Con thương binh',
     preference: 'Tòa B, tầng thấp',
+    desiredBuildingCode: 'B',
     evidence: ['CCCD_2mat.pdf', 'GiayUuTien.pdf'],
     status: 'approved',
     submittedAt: '2026-06-25 08:20',
@@ -117,6 +133,7 @@ export const applications: Application[] = [
     major: 'Điện tử viễn thông',
     priority: 'Không',
     preference: 'Tòa C',
+    desiredBuildingCode: 'C',
     evidence: [],
     status: 'needs-update',
     submittedAt: '2026-06-26 11:55',
@@ -131,6 +148,7 @@ export const applications: Application[] = [
     major: 'Xây dựng',
     priority: 'Không',
     preference: 'Tòa A, tầng 3',
+    desiredBuildingCode: 'A',
     evidence: ['CCCD_2mat.pdf'],
     status: 'rejected',
     submittedAt: '2026-06-24 14:31',
@@ -146,6 +164,7 @@ export type Bed = {
 
 export type Room = {
   backendId?: string;
+  buildingId?: string;
   id: string;
   building: string;
   floor: number;
@@ -437,13 +456,69 @@ export type Resident = {
 };
 
 export const residents: Resident[] = [
-  { studentId: 'SV2302700101', name: 'Ngô Đức Anh', room: 'A-302', bed: 'A-302-B1', cohort: 'K2023', status: 'checked-in', since: '2025-09-05' },
-  { studentId: 'SV2302700102', name: 'Đặng Hữu Phước', room: 'A-302', bed: 'A-302-B2', cohort: 'K2023', status: 'checked-in', since: '2025-09-05' },
-  { studentId: 'SV2302700103', name: 'Bùi Nhật Long', room: 'A-302', bed: 'A-302-B3', cohort: 'K2022', status: 'checked-in', since: '2025-09-06' },
-  { studentId: 'SV2302700162', name: 'Phạm Hoàng Hải', room: 'A-302', bed: 'A-302-B4', cohort: 'K2023', status: 'pending-checkin', since: '2026-07-01' },
-  { studentId: 'SV2302700412', name: 'Nguyễn Thu Hà', room: 'B-105', bed: 'B-105-B2', cohort: 'K2025', status: 'pending-checkin', since: '2026-07-01' },
-  { studentId: 'SV2302700250', name: 'Trần Thị Thu', room: 'B-105', bed: 'B-105-B1', cohort: 'K2024', status: 'checked-in', since: '2025-09-04' },
-  { studentId: 'SV2302700333', name: 'Lý Hoàng Nam', room: 'A-303', bed: 'A-303-B3', cohort: 'K2022', status: 'checked-out', since: '2026-06-20' },
+  {
+    studentId: 'SV2302700101',
+    name: 'Ngô Đức Anh',
+    room: 'A-302',
+    bed: 'A-302-B1',
+    cohort: 'K2023',
+    status: 'checked-in',
+    since: '2025-09-05',
+  },
+  {
+    studentId: 'SV2302700102',
+    name: 'Đặng Hữu Phước',
+    room: 'A-302',
+    bed: 'A-302-B2',
+    cohort: 'K2023',
+    status: 'checked-in',
+    since: '2025-09-05',
+  },
+  {
+    studentId: 'SV2302700103',
+    name: 'Bùi Nhật Long',
+    room: 'A-302',
+    bed: 'A-302-B3',
+    cohort: 'K2022',
+    status: 'checked-in',
+    since: '2025-09-06',
+  },
+  {
+    studentId: 'SV2302700162',
+    name: 'Phạm Hoàng Hải',
+    room: 'A-302',
+    bed: 'A-302-B4',
+    cohort: 'K2023',
+    status: 'pending-checkin',
+    since: '2026-07-01',
+  },
+  {
+    studentId: 'SV2302700412',
+    name: 'Nguyễn Thu Hà',
+    room: 'B-105',
+    bed: 'B-105-B2',
+    cohort: 'K2025',
+    status: 'pending-checkin',
+    since: '2026-07-01',
+  },
+  {
+    studentId: 'SV2302700250',
+    name: 'Trần Thị Thu',
+    room: 'B-105',
+    bed: 'B-105-B1',
+    cohort: 'K2024',
+    status: 'checked-in',
+    since: '2025-09-04',
+  },
+  {
+    studentId: 'SV2302700333',
+    name: 'Lý Hoàng Nam',
+    room: 'A-303',
+    bed: 'A-303-B3',
+    cohort: 'K2022',
+    status: 'checked-out',
+    since: '2026-06-20',
+  },
 ];
 
 export type AuditEntry = {
@@ -455,11 +530,41 @@ export type AuditEntry = {
 };
 
 export const auditLog: AuditEntry[] = [
-  { at: '2026-07-01 10:22', actor: 'staff.kyduyen', action: 'Override phân phòng', target: 'APP-2026-004 → B-105-B2', reason: 'Sinh viên diện ưu tiên xin ở cùng chị gái, đã xác minh.' },
-  { at: '2026-07-01 09:48', actor: 'admin.hai', action: 'Cập nhật rule phân phòng', target: 'RULE-GENDER-01', reason: 'Chuẩn hóa mô tả rule giới tính theo quy chế mới.' },
-  { at: '2026-06-30 16:03', actor: 'staff.kyduyen', action: 'Từ chối hồ sơ', target: 'APP-2026-006', reason: 'Hết chỉ tiêu nam Tòa A cho K2022.' },
-  { at: '2026-06-30 14:30', actor: 'admin.hai', action: 'Khóa bảo trì phòng', target: 'C-101', reason: 'Sửa chữa hệ thống điện tổng tầng 1 Tòa C.' },
-  { at: '2026-06-29 11:12', actor: 'admin.hai', action: 'Gán role Staff', target: 'user thanhtung@qlktx.local', reason: 'Nhân sự mới của Ban quản lý KTX, có quyết định điều động.' },
+  {
+    at: '2026-07-01 10:22',
+    actor: 'staff.kyduyen',
+    action: 'Override phân phòng',
+    target: 'APP-2026-004 → B-105-B2',
+    reason: 'Sinh viên diện ưu tiên xin ở cùng chị gái, đã xác minh.',
+  },
+  {
+    at: '2026-07-01 09:48',
+    actor: 'admin.hai',
+    action: 'Cập nhật rule phân phòng',
+    target: 'RULE-GENDER-01',
+    reason: 'Chuẩn hóa mô tả rule giới tính theo quy chế mới.',
+  },
+  {
+    at: '2026-06-30 16:03',
+    actor: 'staff.kyduyen',
+    action: 'Từ chối hồ sơ',
+    target: 'APP-2026-006',
+    reason: 'Hết chỉ tiêu nam Tòa A cho K2022.',
+  },
+  {
+    at: '2026-06-30 14:30',
+    actor: 'admin.hai',
+    action: 'Khóa bảo trì phòng',
+    target: 'C-101',
+    reason: 'Sửa chữa hệ thống điện tổng tầng 1 Tòa C.',
+  },
+  {
+    at: '2026-06-29 11:12',
+    actor: 'admin.hai',
+    action: 'Gán role Staff',
+    target: 'user thanhtung@qlktx.local',
+    reason: 'Nhân sự mới của Ban quản lý KTX, có quyết định điều động.',
+  },
 ];
 
 export type SystemUser = {
@@ -467,19 +572,81 @@ export type SystemUser = {
   backendId?: string;
   email: string;
   name: string;
-  role: 'student' | 'staff' | 'admin' | 'maintenance' | 'leadership';
+  role: 'student' | 'staff' | 'admin';
   status: 'active' | 'locked' | 'invited';
   lastActive: string;
+  code?: string;
+  cohort?: string;
+  unit?: string;
+  phone?: string;
 };
 
 export const systemUsers: SystemUser[] = [
-  { email: 'admin.hai@qlktx.local', name: 'Hoàng Hải', role: 'admin', status: 'active', lastActive: '2026-07-02 08:30' },
-  { email: 'staff.kyduyen@qlktx.local', name: 'Kỳ Duyên', role: 'staff', status: 'active', lastActive: '2026-07-02 07:55' },
-  { email: 'thanhtung@qlktx.local', name: 'Thanh Tùng', role: 'staff', status: 'invited', lastActive: '-' },
-  { email: 'baotri.cuong@qlktx.local', name: 'Anh Cường (Tổ điện)', role: 'maintenance', status: 'active', lastActive: '2026-07-01 17:20' },
-  { email: 'ctsv.lan@qlktx.local', name: 'Cô Lan (CTSV)', role: 'leadership', status: 'active', lastActive: '2026-06-30 09:10' },
-  { email: 'hai.pham@student.edu.vn', name: 'Phạm Hoàng Hải', role: 'student', status: 'active', lastActive: '2026-07-02 08:00' },
-  { email: 'cu.sinhvien@student.edu.vn', name: 'Tài khoản cũ K2019', role: 'student', status: 'locked', lastActive: '2025-08-01 10:00' },
+  {
+    email: 'admin.hai@qlktx.local',
+    name: 'Hoàng Hải',
+    role: 'admin',
+    status: 'active',
+    lastActive: '2026-07-02 08:30',
+    code: 'AD-001',
+    unit: 'Ban quản trị hệ thống',
+  },
+  {
+    email: 'staff.kyduyen@qlktx.local',
+    name: 'Kỳ Duyên',
+    role: 'staff',
+    status: 'active',
+    lastActive: '2026-07-02 07:55',
+    code: 'NV-102',
+    unit: 'Ban quản lý KTX',
+  },
+  {
+    email: 'thanhtung@qlktx.local',
+    name: 'Thanh Tùng',
+    role: 'staff',
+    status: 'invited',
+    lastActive: '-',
+    code: 'NV-118',
+    unit: 'Ban quản lý KTX',
+  },
+  {
+    email: 'baotri.cuong@qlktx.local',
+    name: 'Anh Cường (Tổ điện)',
+    role: 'staff',
+    status: 'active',
+    lastActive: '2026-07-01 17:20',
+    code: 'BT-021',
+    unit: 'Tổ bảo trì điện',
+  },
+  {
+    email: 'ctsv.lan@qlktx.local',
+    name: 'Cô Lan (CTSV)',
+    role: 'staff',
+    status: 'active',
+    lastActive: '2026-06-30 09:10',
+    code: 'CTSV-008',
+    unit: 'Phòng CTSV',
+  },
+  {
+    email: 'hai.pham@student.edu.vn',
+    name: 'Phạm Hoàng Hải',
+    role: 'student',
+    status: 'active',
+    lastActive: '2026-07-02 08:00',
+    code: 'SV2302700162',
+    cohort: 'K2023',
+    unit: 'DCT123C1',
+  },
+  {
+    email: 'cu.sinhvien@student.edu.vn',
+    name: 'Tài khoản cũ K2019',
+    role: 'student',
+    status: 'locked',
+    lastActive: '2025-08-01 10:00',
+    code: 'SV1902700001',
+    cohort: 'K2019',
+    unit: 'DCT119A1',
+  },
 ];
 
 export type AllocationRule = {
@@ -494,12 +661,54 @@ export type AllocationRule = {
 };
 
 export const allocationRules: AllocationRule[] = [
-  { id: 'RULE-GENDER-01', name: 'Đúng giới tính phòng', type: 'Bắt buộc', description: 'Sinh viên chỉ được xếp vào phòng đúng giới tính.', weight: 100, enabled: true },
-  { id: 'RULE-CAP-01', name: 'Không vượt sức chứa', type: 'Bắt buộc', description: 'Không xếp vào phòng đã đủ số giường.', weight: 100, enabled: true },
-  { id: 'RULE-MAINT-01', name: 'Loại phòng đang bảo trì', type: 'Bắt buộc', description: 'Phòng/giường ở trạng thái maintenance-hold không được gợi ý.', weight: 100, enabled: true },
-  { id: 'RULE-PRIORITY-01', name: 'Ưu tiên chính sách', type: 'Ưu tiên', description: 'Hộ nghèo, con thương binh... được xếp trước.', weight: 80, enabled: true },
-  { id: 'RULE-COHORT-01', name: 'Cùng khóa/ngành', type: 'Ưu tiên', description: 'Ưu tiên xếp cùng phòng với sinh viên cùng khóa hoặc cùng ngành.', weight: 50, enabled: true },
-  { id: 'RULE-PREF-01', name: 'Khớp nguyện vọng tòa nhà', type: 'Ưu tiên', description: 'Ưu tiên tòa nhà sinh viên đăng ký trong nguyện vọng.', weight: 40, enabled: false },
+  {
+    id: 'RULE-GENDER-01',
+    name: 'Đúng giới tính phòng',
+    type: 'Bắt buộc',
+    description: 'Sinh viên chỉ được xếp vào phòng đúng giới tính.',
+    weight: 100,
+    enabled: true,
+  },
+  {
+    id: 'RULE-CAP-01',
+    name: 'Không vượt sức chứa',
+    type: 'Bắt buộc',
+    description: 'Không xếp vào phòng đã đủ số giường.',
+    weight: 100,
+    enabled: true,
+  },
+  {
+    id: 'RULE-MAINT-01',
+    name: 'Loại phòng đang bảo trì',
+    type: 'Bắt buộc',
+    description: 'Phòng/giường ở trạng thái maintenance-hold không được gợi ý.',
+    weight: 100,
+    enabled: true,
+  },
+  {
+    id: 'RULE-PRIORITY-01',
+    name: 'Ưu tiên chính sách',
+    type: 'Ưu tiên',
+    description: 'Hộ nghèo, con thương binh... được xếp trước.',
+    weight: 80,
+    enabled: true,
+  },
+  {
+    id: 'RULE-COHORT-01',
+    name: 'Cùng khóa/ngành',
+    type: 'Ưu tiên',
+    description: 'Ưu tiên xếp cùng phòng với sinh viên cùng khóa hoặc cùng ngành.',
+    weight: 50,
+    enabled: true,
+  },
+  {
+    id: 'RULE-PREF-01',
+    name: 'Khớp nguyện vọng tòa nhà',
+    type: 'Ưu tiên',
+    description: 'Ưu tiên tòa nhà sinh viên đăng ký trong nguyện vọng.',
+    weight: 40,
+    enabled: false,
+  },
 ];
 
 export type StudentNotification = {
@@ -512,9 +721,30 @@ export type StudentNotification = {
 };
 
 export const studentNotifications: StudentNotification[] = [
-  { id: 'NTF-01', title: 'Hồ sơ APP-2026-001 đang chờ duyệt', detail: 'Ban quản lý sẽ phản hồi trong 3 ngày làm việc.', at: '2026-06-28 09:13', read: false, kind: 'application' },
-  { id: 'NTF-02', title: 'Ticket MT-2026-011 đã được tiếp nhận', detail: 'Tổ điện xử lý trong SLA 48 giờ.', at: '2026-06-30 09:05', read: false, kind: 'ticket' },
-  { id: 'NTF-03', title: 'Lịch cắt nước Tòa A', detail: 'Cắt nước bảo trì 22:00-24:00 ngày 03/07.', at: '2026-06-29 16:00', read: true, kind: 'broadcast' },
+  {
+    id: 'NTF-01',
+    title: 'Hồ sơ APP-2026-001 đang chờ duyệt',
+    detail: 'Ban quản lý sẽ phản hồi trong 3 ngày làm việc.',
+    at: '2026-06-28 09:13',
+    read: false,
+    kind: 'application',
+  },
+  {
+    id: 'NTF-02',
+    title: 'Ticket MT-2026-011 đã được tiếp nhận',
+    detail: 'Tổ điện xử lý trong SLA 48 giờ.',
+    at: '2026-06-30 09:05',
+    read: false,
+    kind: 'ticket',
+  },
+  {
+    id: 'NTF-03',
+    title: 'Lịch cắt nước Tòa A',
+    detail: 'Cắt nước bảo trì 22:00-24:00 ngày 03/07.',
+    at: '2026-06-29 16:00',
+    read: true,
+    kind: 'broadcast',
+  },
 ];
 
 export type Invoice = {
@@ -526,9 +756,27 @@ export type Invoice = {
 };
 
 export const invoices: Invoice[] = [
-  { id: 'INV-2026-06', period: 'Tháng 06/2026', amount: '450.000đ', due: '2026-07-10', status: 'unpaid' },
-  { id: 'INV-2026-05', period: 'Tháng 05/2026', amount: '432.000đ', due: '2026-06-10', status: 'paid' },
-  { id: 'INV-2026-04', period: 'Tháng 04/2026', amount: '418.000đ', due: '2026-05-10', status: 'paid' },
+  {
+    id: 'INV-2026-06',
+    period: 'Tháng 06/2026',
+    amount: '450.000đ',
+    due: '2026-07-10',
+    status: 'unpaid',
+  },
+  {
+    id: 'INV-2026-05',
+    period: 'Tháng 05/2026',
+    amount: '432.000đ',
+    due: '2026-06-10',
+    status: 'paid',
+  },
+  {
+    id: 'INV-2026-04',
+    period: 'Tháng 04/2026',
+    amount: '418.000đ',
+    due: '2026-05-10',
+    status: 'paid',
+  },
 ];
 
 export type StudentRequest = {
@@ -540,6 +788,18 @@ export type StudentRequest = {
 };
 
 export const studentRequests: StudentRequest[] = [
-  { id: 'REQ-2026-021', type: 'Đăng ký về muộn', detail: 'Về muộn 22:30 ngày 05/07 do lịch thực tập.', createdAt: '2026-07-01 12:00', status: 'pending' },
-  { id: 'REQ-2026-015', type: 'Gia hạn lưu trú', detail: 'Gia hạn hè 07-08/2026.', createdAt: '2026-06-20 09:30', status: 'approved' },
+  {
+    id: 'REQ-2026-021',
+    type: 'Đăng ký về muộn',
+    detail: 'Về muộn 22:30 ngày 05/07 do lịch thực tập.',
+    createdAt: '2026-07-01 12:00',
+    status: 'pending',
+  },
+  {
+    id: 'REQ-2026-015',
+    type: 'Gia hạn lưu trú',
+    detail: 'Gia hạn hè 07-08/2026.',
+    createdAt: '2026-06-20 09:30',
+    status: 'approved',
+  },
 ];

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="440" viewBox="0 0 760 440" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="760" height="440" fill="#ffffff"/>
+  <text x="380" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">Velocity theo Sprint - Kế hoạch vs Thực tế</text>
+  <text x="380" y="48" text-anchor="middle" font-size="12" fill="#64748b">SP hoàn thành mỗi sprint - đường chấm = velocity kế hoạch 18.5 SP/sprint</text>
+
+  <!-- Y axis -->
+  <g stroke="#e2e8f0" stroke-width="1">
+    <line x1="70" y1="70" x2="70" y2="330"/>
+    <line x1="70" y1="330" x2="710" y2="330"/>
+    <line x1="70" y1="265" x2="710" y2="265" stroke-dasharray="3 3"/>
+    <line x1="70" y1="200" x2="710" y2="200" stroke-dasharray="3 3"/>
+    <line x1="70" y1="135" x2="710" y2="135" stroke-dasharray="3 3"/>
+    <line x1="70" y1="70" x2="710" y2="70" stroke-dasharray="3 3"/>
+  </g>
+  <g font-size="11" fill="#64748b" text-anchor="end">
+    <text x="62" y="334">0</text>
+    <text x="62" y="269">13</text>
+    <text x="62" y="204">26</text>
+    <text x="62" y="139">39</text>
+    <text x="62" y="74">52</text>
+  </g>
+
+  <!-- Bars: 4 sprint groups. Y-scale: value v -> y = 330 - (v/52)*260 ; height = (v/52)*260 -->
+  <!-- Sprint1: planned 29 -> h=145 y=185 ; actual 34 -> h=170 y=160 -->
+  <!-- Sprint2: planned 21 -> h=105 y=225 ; actual 40 -> h=200 y=130 -->
+  <!-- Sprint3: planned 16 -> h=80 y=250 ; actual 0 -->
+  <!-- Sprint4: planned 8  -> h=40 y=290 ; actual 0 -->
+  <g>
+    <!-- S1: planned 29 (h145 y185), actual 29 (h145 y185) -->
+    <rect x="120" y="185" width="42" height="145" fill="#cbd5e1"/>
+    <rect x="168" y="185" width="42" height="145" fill="#0f766e"/>
+    <text x="141" y="178" text-anchor="middle" font-size="11" fill="#475569">29</text>
+    <text x="189" y="178" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">29</text>
+    <text x="165" y="348" text-anchor="middle" font-size="12" fill="#334155">Sprint 1</text>
+
+    <!-- S2: planned 21 (h105 y225), actual 45 (h225 y105) -->
+    <rect x="290" y="225" width="42" height="105" fill="#cbd5e1"/>
+    <rect x="338" y="105" width="42" height="225" fill="#0f766e"/>
+    <text x="311" y="218" text-anchor="middle" font-size="11" fill="#475569">21</text>
+    <text x="359" y="98" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">45</text>
+    <text x="335" y="348" text-anchor="middle" font-size="12" fill="#334155">Sprint 2</text>
+
+    <!-- S3 -->
+    <rect x="460" y="250" width="42" height="80" fill="#cbd5e1"/>
+    <rect x="508" y="322" width="42" height="8" fill="#e2e8f0" stroke="#cbd5e1" stroke-dasharray="3 2"/>
+    <text x="481" y="243" text-anchor="middle" font-size="11" fill="#475569">16</text>
+    <text x="529" y="318" text-anchor="middle" font-size="10" fill="#94a3b8">0*</text>
+    <text x="505" y="348" text-anchor="middle" font-size="12" fill="#334155">Sprint 3</text>
+
+    <!-- S4 -->
+    <rect x="600" y="290" width="42" height="40" fill="#cbd5e1"/>
+    <rect x="648" y="322" width="42" height="8" fill="#e2e8f0" stroke="#cbd5e1" stroke-dasharray="3 2"/>
+    <text x="621" y="283" text-anchor="middle" font-size="11" fill="#475569">8</text>
+    <text x="669" y="318" text-anchor="middle" font-size="10" fill="#94a3b8">0*</text>
+    <text x="645" y="348" text-anchor="middle" font-size="12" fill="#334155">Sprint 4</text>
+  </g>
+
+  <!-- Planned velocity 18.5 line: y = 330 - (18.5/52)*260 = 330 - 92.5 = 237.5 -->
+  <line x1="70" y1="237" x2="710" y2="237" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 4"/>
+  <text x="712" y="241" font-size="10.5" fill="#dc2626">18.5</text>
+
+  <!-- note -->
+  <text x="380" y="378" text-anchor="middle" font-size="11" fill="#64748b" font-style="italic">* Scope Sprint 3-4 (24 SP) được kéo lên Sprint 2 do velocity thực tế cao (điều chỉnh backlog)</text>
+
+  <!-- Legend -->
+  <g font-size="11.5">
+    <rect x="180" y="402" width="16" height="12" fill="#cbd5e1"/>
+    <text x="202" y="412" fill="#334155">Kế hoạch</text>
+    <rect x="300" y="402" width="16" height="12" fill="#0f766e"/>
+    <text x="322" y="412" fill="#334155">Thực tế hoàn thành</text>
+    <line x1="480" y1="408" x2="504" y2="408" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 4"/>
+    <text x="510" y="412" fill="#334155">Velocity kế hoạch</text>
+  </g>
+</svg>

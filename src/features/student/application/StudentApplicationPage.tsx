@@ -22,6 +22,7 @@ import {
   confirmAssignment,
   createAndSubmitApplication,
   fetchApplications,
+  fetchBuildings,
   fetchProfile,
 } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
@@ -160,20 +161,32 @@ function ApplicationStatusView({
 export function StudentApplicationPage() {
   const { data: applications, loading, reload } = useAsyncData(fetchApplications);
   const { data: profile } = useAsyncData(fetchProfile);
+  const {
+    data: buildings,
+    loading: buildingsLoading,
+    error: buildingsError,
+  } = useAsyncData(fetchBuildings);
   const [step, setStep] = useState<Step>('consent');
   const [consented, setConsented] = useState(false);
+  const [desiredBuildingId, setDesiredBuildingId] = useState('');
   const [preference, setPreference] = useState('');
   const [evidenceAdded, setEvidenceAdded] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const latest = (applications ?? [])[0] ?? null;
+  const buildingOptions = (buildings ?? []).filter((building) => building.status === 'active');
+  const selectedBuilding = buildingOptions.find(
+    (building) => (building.backendId ?? building.code) === desiredBuildingId,
+  );
 
   const submitForm = async () => {
-    if (!preference.trim() || !evidenceAdded) {
+    if (!desiredBuildingId || !preference.trim() || !evidenceAdded) {
       setFormError(
         !evidenceAdded
           ? 'Cần đính kèm CCCD và giấy xác nhận sinh viên.'
+          : !desiredBuildingId
+            ? 'Vui lòng chọn tòa nhà mong muốn.'
           : 'Vui lòng nhập nguyện vọng phòng ở.',
       );
       return;
@@ -182,6 +195,8 @@ export function StudentApplicationPage() {
     setSubmitting(true);
     try {
       await createAndSubmitApplication({
+        desiredBuildingId,
+        desiredBuildingLabel: selectedBuilding?.name,
         lifestyleNeeds: [preference],
         priorityNote: 'Không thuộc diện ưu tiên',
         documents: [{ name: 'CCCD_2mat.pdf' }, { name: 'GiayXacNhanSV.pdf' }],
@@ -286,6 +301,13 @@ export function StudentApplicationPage() {
                     <AlertDescription>{formError}</AlertDescription>
                   </Alert>
                 )}
+                {buildingsError && (
+                  <Alert variant="destructive">
+                    <XCircle className="h-4 w-4" aria-hidden="true" />
+                    <AlertTitle>Không tải được danh sách tòa</AlertTitle>
+                    <AlertDescription>{buildingsError}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-2 text-sm font-medium text-slate-700">
                     Họ và tên
@@ -322,14 +344,28 @@ export function StudentApplicationPage() {
                   </div>
                   <div className="grid gap-2 text-sm font-medium text-slate-700">
                     Tòa nhà mong muốn
-                    <Select defaultValue="A">
+                    <Select
+                      value={desiredBuildingId}
+                      disabled={buildingsLoading || buildingOptions.length === 0}
+                      onValueChange={setDesiredBuildingId}
+                    >
                       <SelectTrigger aria-label="Tòa nhà mong muốn">
-                        <SelectValue placeholder="Chọn tòa nhà" />
+                        <SelectValue
+                          placeholder={
+                            buildingsLoading
+                              ? 'Đang tải tòa nhà...'
+                              : buildingOptions.length === 0
+                                ? 'Chưa có tòa đang hoạt động'
+                                : 'Chọn tòa nhà'
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="A">Tòa A (Nam)</SelectItem>
-                        <SelectItem value="B">Tòa B (Nữ)</SelectItem>
-                        <SelectItem value="C">Tòa C (Nam)</SelectItem>
+                        {buildingOptions.map((building) => (
+                          <SelectItem key={building.backendId ?? building.code} value={building.backendId ?? building.code}>
+                            {building.name} ({building.code})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

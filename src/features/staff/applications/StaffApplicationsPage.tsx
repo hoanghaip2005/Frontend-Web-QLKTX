@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, FileText, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Eye, FileText, Search, XCircle } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
@@ -33,31 +33,83 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { fetchApplications, reviewApplication } from '@/lib/api/repositories';
+import { fetchApplications, fetchBuildings, reviewApplication } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-import type { Application, ApplicationStatus } from '@/mocks/data/dormData';
+import type { Application, ApplicationEvidence, ApplicationStatus } from '@/mocks/data/dormData';
 
-type Decision = { kind: 'approved' | 'rejected' | 'needs-update'; target: Application } | null;
+type DecisionKind = 'approved' | 'rejected' | 'needs-update';
+type Decision = { kind: DecisionKind; target: Application } | null;
+
+const reviewSuggestionLabels: Record<DecisionKind, string[]> = {
+  approved: [
+    'Hồ sơ đầy đủ, minh chứng hợp lệ.',
+    'Đúng đối tượng và còn chỉ tiêu xét duyệt.',
+    'Thông tin sinh viên khớp hồ sơ nhà trường.',
+  ],
+  'needs-update': [
+    'Vui lòng bổ sung CCCD 2 mặt rõ nét.',
+    'Vui lòng bổ sung giấy xác nhận sinh viên còn hiệu lực.',
+    'Minh chứng ưu tiên chưa đủ căn cứ, cần tải lại bản rõ hơn.',
+  ],
+  rejected: [
+    'Không đủ điều kiện đăng ký KTX trong học kỳ này.',
+    'Hồ sơ không hợp lệ sau thời hạn bổ sung.',
+    'KTX đã hết chỉ tiêu phù hợp với nguyện vọng đã đăng ký.',
+  ],
+};
+
+function evidenceItems(application: Application): ApplicationEvidence[] {
+  if (application.evidenceDocuments?.length) return application.evidenceDocuments;
+  return application.evidence.map((name) => ({ name }));
+}
+
+function evidenceHref(file: ApplicationEvidence) {
+  return file.url ?? (file.path?.startsWith('http') || file.path?.startsWith('/') ? file.path : undefined);
+}
+
+function isImageEvidence(file: ApplicationEvidence) {
+  const value = `${file.type ?? ''} ${file.name} ${file.url ?? ''}`.toLowerCase();
+  return value.includes('image/') || /\.(png|jpe?g|webp|gif)$/i.test(value);
+}
+
+function isPdfEvidence(file: ApplicationEvidence) {
+  const value = `${file.type ?? ''} ${file.name} ${file.url ?? ''}`.toLowerCase();
+  return value.includes('pdf') || /\.pdf$/i.test(value);
+}
 
 export function StaffApplicationsPage() {
   const { data: rows, loading, error, reload } = useAsyncData(fetchApplications);
+  const { data: buildings } = useAsyncData(fetchBuildings);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | ApplicationStatus>('all');
+  const [buildingFilter, setBuildingFilter] = useState('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [decision, setDecision] = useState<Decision>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<ApplicationEvidence | null>(null);
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const buildingOptions = buildings ?? [];
+  const selectedBuilding = buildingOptions.find((building) => building.code === buildingFilter);
   const filtered = (rows ?? []).filter((row) => {
     const matchesQuery =
       row.id.toLowerCase().includes(query.toLowerCase()) ||
       row.studentName.toLowerCase().includes(query.toLowerCase()) ||
       row.studentId.toLowerCase().includes(query.toLowerCase());
     const matchesStatus = statusFilter === 'all' || row.status === statusFilter;
-    return matchesQuery && matchesStatus;
+    const matchesBuilding =
+      buildingFilter === 'all' ||
+      row.desiredBuildingCode === buildingFilter ||
+      row.preference.toLowerCase().includes(`tòa ${buildingFilter}`.toLowerCase()) ||
+      (selectedBuilding
+        ? row.preference.toLowerCase().includes(selectedBuilding.name.toLowerCase())
+        : false);
+    return matchesQuery && matchesStatus && matchesBuilding;
   });
   const selected = (rows ?? []).find((row) => row.id === selectedId) ?? null;
+  const selectedEvidenceItems = selected ? evidenceItems(selected) : [];
+  const selectedEvidenceHref = selectedEvidence ? evidenceHref(selectedEvidence) : undefined;
 
   const applyDecision = async () => {
     if (!decision || !reason.trim()) return;
@@ -73,6 +125,11 @@ export function StaffApplicationsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openDecision = (kind: DecisionKind, target: Application) => {
+    setDecision({ kind, target });
+    setReason('');
   };
 
   const decisionTitle =
@@ -140,6 +197,19 @@ export function StaffApplicationsPage() {
             <SelectItem value="checked-in">Đã check-in</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={buildingFilter} onValueChange={setBuildingFilter}>
+          <SelectTrigger className="w-full sm:w-48" aria-label="Lọc theo tòa nhà">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả tòa</SelectItem>
+            {buildingOptions.map((building) => (
+              <SelectItem key={building.code} value={building.code}>
+                {building.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
@@ -165,6 +235,7 @@ export function StaffApplicationsPage() {
                       <TableRow>
                         <TableHead>Hồ sơ</TableHead>
                         <TableHead>Sinh viên</TableHead>
+                        <TableHead>Tòa mong muốn</TableHead>
                         <TableHead>Ưu tiên</TableHead>
                         <TableHead>Trạng thái</TableHead>
                         <TableHead className="text-right">Thao tác</TableHead>
@@ -180,6 +251,9 @@ export function StaffApplicationsPage() {
                           <TableCell>
                             <p>{row.studentName}</p>
                             <p className="text-xs text-slate-500">{row.studentId}</p>
+                          </TableCell>
+                          <TableCell>
+                            {row.desiredBuildingCode ? `Tòa ${row.desiredBuildingCode}` : '-'}
                           </TableCell>
                           <TableCell>{row.priority}</TableCell>
                           <TableCell>
@@ -237,6 +311,12 @@ export function StaffApplicationsPage() {
                       <dt className="text-xs text-slate-500">Diện ưu tiên</dt>
                       <dd className="font-medium text-slate-900">{selected.priority}</dd>
                     </div>
+                    <div>
+                      <dt className="text-xs text-slate-500">Tòa mong muốn</dt>
+                      <dd className="font-medium text-slate-900">
+                        {selected.desiredBuildingCode ? `Tòa ${selected.desiredBuildingCode}` : '-'}
+                      </dd>
+                    </div>
                     <div className="col-span-2">
                       <dt className="text-xs text-slate-500">Nguyện vọng</dt>
                       <dd className="font-medium text-slate-900">{selected.preference || '-'}</dd>
@@ -244,16 +324,40 @@ export function StaffApplicationsPage() {
                   </dl>
                   <div>
                     <p className="text-xs text-slate-500">Minh chứng</p>
-                    {selected.evidence.length === 0 ? (
+                    {selectedEvidenceItems.length === 0 ? (
                       <p className="mt-1 rounded-app bg-amber-50 p-2 text-amber-800">
                         Chưa có minh chứng đính kèm.
                       </p>
                     ) : (
-                      <ul className="mt-1 space-y-1">
-                        {selected.evidence.map((file) => (
-                          <li key={file} className="flex items-center gap-2 text-slate-700">
-                            <FileText className="h-4 w-4 text-slate-400" aria-hidden="true" />
-                            {file}
+                      <ul className="mt-2 space-y-2">
+                        {selectedEvidenceItems.map((file) => (
+                          <li
+                            key={`${file.name}-${file.url ?? file.path ?? ''}`}
+                            className="flex items-center justify-between gap-3 rounded-app border border-slate-200 px-3 py-2 text-slate-700"
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <FileText
+                                className="h-4 w-4 shrink-0 text-slate-400"
+                                aria-hidden="true"
+                              />
+                              <span className="min-w-0">
+                                <span className="block truncate font-medium">{file.name}</span>
+                                {(file.size || file.type) && (
+                                  <span className="block text-xs text-slate-500">
+                                    {[file.type, file.size].filter(Boolean).join(' - ')}
+                                  </span>
+                                )}
+                              </span>
+                            </span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedEvidence(file)}
+                            >
+                              <Eye className="h-4 w-4" aria-hidden="true" />
+                              Xem
+                            </Button>
                           </li>
                         ))}
                       </ul>
@@ -268,7 +372,7 @@ export function StaffApplicationsPage() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
-                      onClick={() => setDecision({ kind: 'approved', target: selected })}
+                      onClick={() => openDecision('approved', selected)}
                     >
                       <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                       Duyệt
@@ -276,14 +380,14 @@ export function StaffApplicationsPage() {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => setDecision({ kind: 'needs-update', target: selected })}
+                      onClick={() => openDecision('needs-update', selected)}
                     >
                       Yêu cầu bổ sung
                     </Button>
                     <Button
                       type="button"
                       variant="destructive"
-                      onClick={() => setDecision({ kind: 'rejected', target: selected })}
+                      onClick={() => openDecision('rejected', selected)}
                     >
                       <XCircle className="h-4 w-4" aria-hidden="true" />
                       Từ chối
@@ -306,6 +410,26 @@ export function StaffApplicationsPage() {
               Lý do là bắt buộc và sẽ hiển thị cho sinh viên, đồng thời được lưu vào audit log.
             </DialogDescription>
           </DialogHeader>
+          {decision && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Gợi ý nội dung
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {reviewSuggestionLabels[decision.kind].map((label) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    size="sm"
+                    variant={reason === label ? 'secondary' : 'outline'}
+                    onClick={() => setReason(label)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
           <Textarea
             placeholder={
               decision?.kind === 'approved'
@@ -327,6 +451,66 @@ export function StaffApplicationsPage() {
               {saving ? 'Đang lưu...' : `Xác nhận ${decisionTitle.toLowerCase()}`}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={selectedEvidence !== null}
+        onOpenChange={(open) => !open && setSelectedEvidence(null)}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{selectedEvidence?.name}</DialogTitle>
+            <DialogDescription>
+              Minh chứng đính kèm hồ sơ {selected?.id ?? ''}.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEvidence && (
+            <div className="space-y-4">
+              {selectedEvidenceHref && isImageEvidence(selectedEvidence) ? (
+                <div className="overflow-hidden rounded-app border border-slate-200 bg-slate-50">
+                  <img
+                    src={selectedEvidenceHref}
+                    alt={selectedEvidence.name}
+                    className="max-h-[65vh] w-full object-contain"
+                  />
+                </div>
+              ) : selectedEvidenceHref && isPdfEvidence(selectedEvidence) ? (
+                <iframe
+                  title={selectedEvidence.name}
+                  src={selectedEvidenceHref}
+                  className="h-[65vh] w-full rounded-app border border-slate-200"
+                />
+              ) : (
+                <div className="rounded-app border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                  Backend hiện chỉ cung cấp metadata cho file này. Khi API trả URL/path public hoặc signed
+                  URL, nội dung sẽ được nhúng trực tiếp tại đây.
+                </div>
+              )}
+              <dl className="grid gap-2 text-sm sm:grid-cols-2">
+                {[
+                  ['Tên file', selectedEvidence.name],
+                  ['Loại', selectedEvidence.type ?? '-'],
+                  ['Dung lượng', selectedEvidence.size ?? '-'],
+                  ['Tải lên', selectedEvidence.uploadedAt ?? '-'],
+                  ['Đường dẫn', selectedEvidenceHref ?? selectedEvidence.path ?? '-'],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-app bg-slate-50 px-3 py-2">
+                    <dt className="text-xs text-slate-500">{label}</dt>
+                    <dd className="mt-1 break-all font-medium text-slate-900">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {selectedEvidenceHref && (
+                <Button asChild type="button" variant="secondary">
+                  <a href={selectedEvidenceHref} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                    Mở tab mới
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

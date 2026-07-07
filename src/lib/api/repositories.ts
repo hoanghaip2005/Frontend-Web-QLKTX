@@ -673,6 +673,8 @@ export async function fetchApplications(): Promise<Application[]> {
 }
 
 export async function createAndSubmitApplication(input: {
+  desiredBuildingId?: string | null;
+  desiredBuildingLabel?: string;
   desiredRoomType?: string;
   lifestyleNeeds: string[];
   priorityNote: string;
@@ -688,7 +690,8 @@ export async function createAndSubmitApplication(input: {
       cohort: currentStudent.cohort,
       major: currentStudent.major,
       priority: input.priorityNote || 'Không',
-      preference: input.lifestyleNeeds.join(', '),
+      preference: [input.desiredBuildingLabel, ...input.lifestyleNeeds].filter(Boolean).join(', '),
+      desiredBuildingId: input.desiredBuildingId ?? undefined,
       evidence: input.documents.map((doc) => doc.name),
       status: 'pending',
       submittedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
@@ -699,6 +702,7 @@ export async function createAndSubmitApplication(input: {
   const draft = await http<ApplicationDto>('/api/applications', {
     method: 'POST',
     body: {
+      desired_building_id: input.desiredBuildingId ?? null,
       desired_room_type: input.desiredRoomType,
       lifestyle_needs: input.lifestyleNeeds,
       priority_note: input.priorityNote,
@@ -753,7 +757,7 @@ export async function fetchSuggestion(
 export async function assignApplication(
   application: Application,
   suggestion: AssignmentSuggestion,
-  override?: { bed: string; reason: string },
+  override?: { bed: string; reason: string; roomId?: string },
 ): Promise<void> {
   if (!live()) {
     await delay();
@@ -767,7 +771,7 @@ export async function assignApplication(
   await http(`/api/applications/${application.backendId}/assign`, {
     method: 'POST',
     body: {
-      assigned_room_id: suggestion.roomId,
+      assigned_room_id: override?.roomId ?? suggestion.roomId,
       assigned_bed_code: override?.bed ?? suggestion.suggestedBed,
       assignment_reasons: suggestion.reasons,
       status: 'suggested',
@@ -1320,38 +1324,7 @@ export async function fetchSystemUsers(): Promise<SystemUser[]> {
     await delay();
     return [...mockState.users];
   }
-  const rows = await http<
-    {
-      id: string;
-      email?: string;
-      full_name: string;
-      role: string;
-      status: string;
-      student_code?: string | null;
-      staff_code?: string | null;
-      department?: string | null;
-      class_name?: string | null;
-      cohort?: string | null;
-      phone_number?: string | null;
-      created_at?: string;
-      updated_at?: string;
-    }[]
-  >('/api/profiles?pageSize=100');
-  return rows.map((row) => ({
-    backendId: row.id,
-    email: row.email ?? row.id,
-    name: row.full_name,
-    role: (['student', 'staff', 'admin'].includes(row.role)
-      ? row.role
-      : 'staff') as SystemUser['role'],
-    status: row.status === 'active' ? 'active' : 'locked',
-    lastActive:
-      (row.updated_at ?? row.created_at)?.slice(0, 16).replace('T', ' ') ?? '-',
-    code: row.student_code ?? row.staff_code ?? undefined,
-    cohort: row.cohort ?? undefined,
-    unit: row.department ?? row.class_name ?? undefined,
-    phone: row.phone_number ?? undefined,
-  }));
+  return (await http<SystemUserDto[]>('/api/profiles?pageSize=100')).map(mapSystemUser);
 }
 
 export async function setUserLocked(
@@ -1409,36 +1382,18 @@ export async function createSystemUser(input: CreateSystemUserInput): Promise<Sy
     pushMockAudit('profile.invite', input.email, `Mời ${input.name}`);
     return created;
   }
-  const backendRole = input.role;
-  const dto = await http<{
-    id: string;
-    full_name: string;
-    email?: string;
-    role: string;
-    status: string;
-    student_code?: string | null;
-    staff_code?: string | null;
-    created_at?: string;
-  }>('/api/profiles', {
+  const created = await http<SystemUserDto>('/api/profiles', {
     method: 'POST',
     body: {
       full_name: input.name,
       email: input.email,
-      role: backendRole,
-      ...(backendRole === 'student'
+      role: input.role,
+      ...(input.role === 'student'
         ? { student_code: input.code || undefined }
         : { staff_code: input.code || undefined }),
     },
   });
-  return {
-    backendId: dto.id,
-    email: dto.email ?? input.email,
-    name: dto.full_name,
-    role: (['student', 'staff', 'admin'].includes(dto.role) ? dto.role : 'staff') as SystemUser['role'],
-    status: dto.status === 'active' ? 'active' : 'invited',
-    lastActive: dto.created_at?.slice(0, 16).replace('T', ' ') ?? '-',
-    code: dto.student_code ?? dto.staff_code ?? undefined,
-  };
+  return mapSystemUser(created);
 }
 
 export async function fetchAllocationRules(): Promise<AllocationRule[]> {

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="440" viewBox="0 0 760 440" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="760" height="440" fill="#ffffff"/>
+  <text x="380" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#0f172a">Burndown Chart - DormCare Hub MVP (74 SP)</text>
+  <text x="380" y="48" text-anchor="middle" font-size="12" fill="#64748b">Story Points còn lại theo sprint - tính đến tuần báo cáo</text>
+
+  <!-- Y axis grid + labels -->
+  <g stroke="#e2e8f0" stroke-width="1">
+    <line x1="60" y1="40" x2="60" y2="340"/>
+    <line x1="60" y1="340" x2="700" y2="340"/>
+    <line x1="60" y1="40" x2="700" y2="40" stroke-dasharray="3 3"/>
+    <line x1="60" y1="115" x2="700" y2="115" stroke-dasharray="3 3"/>
+    <line x1="60" y1="190" x2="700" y2="190" stroke-dasharray="3 3"/>
+    <line x1="60" y1="265" x2="700" y2="265" stroke-dasharray="3 3"/>
+  </g>
+  <g font-size="11" fill="#64748b" text-anchor="end">
+    <text x="52" y="44">74</text>
+    <text x="52" y="119">56</text>
+    <text x="52" y="194">37</text>
+    <text x="52" y="269">18</text>
+    <text x="52" y="344">0</text>
+  </g>
+  <g font-size="11" fill="#334155" text-anchor="middle">
+    <text x="60" y="360">Start</text>
+    <text x="220" y="360">Sprint 1</text>
+    <text x="380" y="360">Sprint 2</text>
+    <text x="540" y="360">Sprint 3</text>
+    <text x="700" y="360">Sprint 4</text>
+  </g>
+  <text x="380" y="392" text-anchor="middle" font-size="11" fill="#94a3b8">10/6  →  24/6  →  8/7  →  22/7  →  5/8 (release cố định)</text>
+
+  <!-- Planned (ideal) line: 74,45,24,8,0 -->
+  <polyline fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 5"
+    points="60,40 220,157 380,243 540,308 700,340"/>
+  <g fill="#94a3b8">
+    <circle cx="60" cy="40" r="4"/><circle cx="220" cy="157" r="4"/><circle cx="380" cy="243" r="4"/><circle cx="540" cy="308" r="4"/><circle cx="700" cy="340" r="4"/>
+  </g>
+
+  <!-- Actual line: 74 -> 45 (S1, đúng kế hoạch) -> 0 (S2), then flat hardening -->
+  <polyline fill="none" stroke="#0f766e" stroke-width="3"
+    points="60,40 220,157 380,340"/>
+  <polyline fill="none" stroke="#0f766e" stroke-width="3" stroke-dasharray="2 4"
+    points="380,340 540,340 700,340"/>
+  <g fill="#0f766e">
+    <circle cx="60" cy="40" r="4.5"/><circle cx="220" cy="157" r="4.5"/><circle cx="380" cy="340" r="4.5"/>
+  </g>
+
+  <!-- value labels -->
+  <g font-size="10.5" font-weight="600">
+    <text x="232" y="150" fill="#0f766e">45 SP (đúng kế hoạch)</text>
+    <text x="388" y="333" fill="#0f766e">0 SP (hết Must-have)</text>
+  </g>
+
+  <!-- annotation: hardening zone -->
+  <rect x="380" y="40" width="320" height="300" fill="#0f766e" opacity="0.05"/>
+  <text x="540" y="60" text-anchor="middle" font-size="10.5" fill="#0f766e" font-style="italic">Giai đoạn hardening: tích hợp Azure,</text>
+  <text x="540" y="74" text-anchor="middle" font-size="10.5" fill="#0f766e" font-style="italic">fix bug, tài liệu, PoC thực thi</text>
+
+  <!-- Legend -->
+  <g font-size="11.5">
+    <line x1="120" y1="418" x2="150" y2="418" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 5"/>
+    <text x="156" y="422" fill="#334155">Kế hoạch (ideal)</text>
+    <line x1="330" y1="418" x2="360" y2="418" stroke="#0f766e" stroke-width="3"/>
+    <text x="366" y="422" fill="#334155">Thực tế (đi trước kế hoạch)</text>
+  </g>
+</svg>

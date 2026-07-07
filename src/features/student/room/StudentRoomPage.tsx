@@ -3,6 +3,7 @@ import { BedDouble, QrCode, Users, Wrench } from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -15,19 +16,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { fetchCurrentRoom, fetchRooms } from '@/lib/api/repositories';
+import { fetchCurrentRoom, fetchRoomAssets, fetchRooms } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
-
-const roomAssets = [
-  { id: 'QR-A302-FAN01', name: 'Quạt trần', condition: 'Đang báo sửa' },
-  { id: 'QR-A302-AC01', name: 'Điều hòa', condition: 'Tốt' },
-  { id: 'QR-A302-DESK01', name: 'Bàn học x4', condition: 'Tốt' },
-  { id: 'QR-A302-LOCK01', name: 'Khóa cửa', condition: 'Tốt' },
-];
 
 export function StudentRoomPage() {
   const { data: current, loading } = useAsyncData(fetchCurrentRoom);
   const { data: allRooms } = useAsyncData(fetchRooms);
+  const myRoom = current?.roomCode
+    ? (allRooms ?? []).find((room) => room.id === current.roomCode) ?? null
+    : null;
+  const {
+    data: roomAssets,
+    loading: assetsLoading,
+    error: assetsError,
+  } = useAsyncData(() => (myRoom ? fetchRoomAssets(myRoom) : Promise.resolve([])), [
+    myRoom?.backendId ?? myRoom?.id ?? 'none',
+  ]);
 
   if (loading) return <LoadingState />;
   if (!current?.roomCode) {
@@ -46,7 +50,6 @@ export function StudentRoomPage() {
     );
   }
 
-  const myRoom = (allRooms ?? []).find((room) => room.id === current.roomCode) ?? null;
   const myBedId = current.bedCode?.startsWith(current.roomCode)
     ? current.bedCode
     : `${current.roomCode}-${current.bedCode}`;
@@ -154,38 +157,52 @@ export function StudentRoomPage() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã QR</TableHead>
-                  <TableHead>Tài sản</TableHead>
-                  <TableHead>Tình trạng</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {roomAssets.map((asset) => (
-                  <TableRow key={asset.id}>
-                    <TableCell className="font-mono text-xs">{asset.id}</TableCell>
-                    <TableCell>{asset.name}</TableCell>
-                    <TableCell>
-                      <StatusBadge
-                        status={asset.condition === 'Tốt' ? 'available' : 'in-progress'}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild size="sm" variant="ghost">
-                        <Link to="/student/tickets" aria-label={`Báo sửa ${asset.name}`}>
-                          Báo sửa
-                        </Link>
-                      </Button>
-                    </TableCell>
+          {assetsLoading ? (
+            <LoadingState />
+          ) : assetsError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Không tải được tài sản phòng</AlertTitle>
+              <AlertDescription>{assetsError}</AlertDescription>
+            </Alert>
+          ) : !roomAssets || roomAssets.length === 0 ? (
+            <EmptyState
+              title="Chưa có tài sản"
+              description="Phòng này chưa được cấu hình tài sản hoặc mã QR trong backend."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mã QR</TableHead>
+                    <TableHead>Tài sản</TableHead>
+                    <TableHead>Nhóm</TableHead>
+                    <TableHead>Tình trạng</TableHead>
+                    <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {roomAssets.map((asset) => (
+                    <TableRow key={asset.backendId ?? asset.assetCode}>
+                      <TableCell className="font-mono text-xs">{asset.assetCode}</TableCell>
+                      <TableCell>{asset.name}</TableCell>
+                      <TableCell>{asset.category}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={asset.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/student/tickets" aria-label={`Báo sửa ${asset.name}`}>
+                            Báo sửa
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

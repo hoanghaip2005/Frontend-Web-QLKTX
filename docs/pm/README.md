@@ -4,10 +4,10 @@
 | --- | --- |
 | Project | DormCare Hub - School Dormitory Management System |
 | Document ID | DCH-DOC-INDEX |
-| Version | 1.1 |
-| Status | Synced with implementation |
+| Version | 1.2 |
+| Status | Synced with implementation; mỗi tài liệu có mục Tóm tắt |
 | Owner | Group 3 |
-| Updated | 2026-07-03 |
+| Updated | 2026-07-06 |
 | Source files | Original `.docx` files in workspace; instructor examples at `https://nndkhoa.github.io/project-management-docs/` |
 
 ## Purpose
@@ -31,6 +31,11 @@ DormCare Hub is a web-responsive dormitory management system for schools. The MV
 | [Figma Implementation Guide](figma-implementation-guide.md) | Execution runbook for creating the Figma file, canvas layout, components, prototype links, and QA checks. | Prototype Spec, Figma workflow rules |
 | [Implementation Traceability](implementation-traceability.md) | Truy vết US → màn hình React → API → bằng chứng test cho review DoD và demo. | Product Backlog, Prototype Spec, mã nguồn 2 repo |
 | [Demo Script & Test Scenarios](demo-script-test-scenarios.md) | Kịch bản đóng vai SV/Staff/Admin theo timeline, 14 tình huống test negative/edge, luận điểm "không chỉ CRUD". | Traceability, môi trường Azure production |
+| [Risk Management (Digest & Actuals)](risk-management.md) | Register R-01→R-15 rút gọn, trạng thái thực tế từng rủi ro đến 2026-07-06, phân tích rủi ro 2 hướng A/B. | `Risk Management Plan.docx`, D08 |
+| [Progress Report - Tuần 10](progress-report-week10.md) | Báo cáo tiến độ có burndown + velocity (SVG), điều chỉnh backlog từng sprint, tiến độ vs mục tiêu, phần chưa OK + giải pháp. | Release plan, backlog, traceability, Jira |
+| [Presentation Deck Plan - 45 Slides](presentation-deck-plan-45-slides.md) | Nội dung thuyết trình 45 slide theo yêu cầu thầy, chia 7 thành viên, kèm visual brief và speaker note. | Toàn bộ docs + sản phẩm |
+| [Presentation Render Content - 45 Slides](presentation-render-content-45-slides.md) | Bản chỉ chứa nội dung hiển thị trên từng slide và bố cục render, dùng để tạo ảnh/PPTX bằng GPT Plus. | Deck plan 45 slide |
+| [Project Documentation Review](project-documentation-review.md) | Review trạng thái tài liệu sau phiên bổ sung bị gián đoạn, link quan trọng và follow-up còn lại. | Markdown docs, progress/risk/deck files |
 
 ## Current Status
 
@@ -46,6 +51,7 @@ DormCare Hub is a web-responsive dormitory management system for schools. The MV
 | Web UI MVP | Implemented | Toàn bộ 13 Must-Have story có màn hình React trong `D:\QLKTX\Frontend-Web-QLKTX` (student/staff/admin portals, mock + live mode). |
 | Backend API | Implemented & tested | `D:\QLKTX\Backend-QLKTX` (Express + PostgreSQL): application lifecycle, tickets/SLA, RBAC, audit. E2E API test 26/26 pass trên môi trường local (docker postgres + `database/local-dev-bootstrap.sql`). |
 | Frontend-Backend integration | Wired | Frontend gọi API qua repositories (`src/lib/api`), chuyển `mock`/`live` bằng `VITE_API_MODE`; luồng duyệt hồ sơ từ UI đã persist vào database. Supabase Auth thật vẫn deferred (dev bypass trong môi trường local). |
+| Documentation review | Completed | Bộ docs PM đã có review index, progress report, demo script, Figma runbook, deck plan 45 slide và bản render-ready. |
 
 ## Submission Guidance
 
@@ -62,4 +68,4 @@ Recommended review order:
 7. Execute [Proof of Concept](proof-of-concept.md) before committing to detailed build decisions.
 8. Use [Prototype Spec](prototype-spec.md) to build and validate the Figma prototype.
 9. Follow [Figma Implementation Guide](figma-implementation-guide.md) when the Figma write tools are available.
-
+10. Use [Project Documentation Review](project-documentation-review.md) and [Presentation Deck Plan - 45 Slides](presentation-deck-plan-45-slides.md) for the final presentation handoff.

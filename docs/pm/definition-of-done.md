@@ -10,6 +10,10 @@
 | Updated | 2026-06-02 |
 | Source files | `Group3_DormCare_Hub _ Định nghĩa quy trình phần mềm.docx`; instructor Software Process example |
 
+## Tóm tắt
+
+Một story chỉ Done khi qua đủ 11 tiêu chí (requirement → demo) có người kiểm và bằng chứng cụ thể: PR review, CI pass, test ≥70% module coverage, QA không còn bug Critical/High, kiểm RBAC negative, sample data tái hiện được flow, tài liệu cập nhật. Story nhạy cảm dữ liệu sinh viên bắt buộc kiểm tra cross-role access. Kèm danh sách "Not Done" điển hình để tránh nhầm "có UI = xong".
+
 ## Purpose
 
 Definition of Done defines the minimum quality bar for a DormCare Hub task or user story. A story is not Done because the UI exists or the code compiles. It is Done only when it is implemented, reviewed, tested, documented, and demo-ready with realistic sample data.
