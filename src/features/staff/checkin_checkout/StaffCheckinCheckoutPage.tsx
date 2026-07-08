@@ -4,6 +4,7 @@ import { LogIn, LogOut, Search } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -182,6 +183,7 @@ export function StaffCheckinCheckoutPage() {
                       <TableHead>Hồ sơ</TableHead>
                       <TableHead>Sinh viên</TableHead>
                       <TableHead>Trạng thái</TableHead>
+                      <TableHead>QR</TableHead>
                       <TableHead className="text-right">Thao tác</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -196,11 +198,20 @@ export function StaffCheckinCheckoutPage() {
                         <TableCell>
                           <StatusBadge status={row.status} />
                         </TableCell>
+                        <TableCell>
+                          <Badge variant={row.qrVerified ? 'default' : 'secondary'}>
+                            {row.qrVerified ? 'Đã quét' : 'Chưa quét'}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-right">
-                          {row.status === 'waiting-checkin' ? (
+                          {row.status === 'waiting-checkin' && row.qrVerified ? (
                             <Button type="button" size="sm" onClick={() => setPendingCheckin(row)}>
                               <LogIn className="h-4 w-4" aria-hidden="true" />
                               Check-in
+                            </Button>
+                          ) : row.status === 'waiting-checkin' ? (
+                            <Button type="button" size="sm" variant="secondary" disabled>
+                              Chờ QR
                             </Button>
                           ) : (
                             <span className="text-xs text-slate-400">Chờ SV xác nhận</span>

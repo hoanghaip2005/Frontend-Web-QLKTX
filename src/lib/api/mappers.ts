@@ -50,6 +50,10 @@ export type ApplicationDto = {
   progress_percent?: number;
   submitted_at?: string | null;
   reviewed_at?: string | null;
+  metadata?: {
+    qr_verified?: boolean;
+    checkin_qr_verified_at?: string;
+  } | null;
   staff_note?: string | null;
   rejection_reason?: string | null;
   assigned_room_code?: string | null;
@@ -210,6 +214,8 @@ export function mapApplication(dto: ApplicationDto): Application {
     reviewChecks,
     progressPercent: dto.progress_percent,
     reviewedAt: dto.reviewed_at?.slice(0, 16).replace('T', ' ') ?? undefined,
+    qrVerified: dto.metadata?.qr_verified === true,
+    qrVerifiedAt: dto.metadata?.checkin_qr_verified_at?.slice(0, 16).replace('T', ' '),
     status: toUiApplicationStatus(dto.status),
     submittedAt: dto.submitted_at?.slice(0, 16).replace('T', ' ') ?? '-',
     note: dto.rejection_reason ?? dto.staff_note ?? undefined,

@@ -823,9 +823,38 @@ export async function assignApplication(
 export async function confirmAssignment(application: Application): Promise<void> {
   if (!live()) {
     await delay();
+    const row = mockState.applications.find((item) => item.id === application.id);
+    if (row) {
+      row.status = 'waiting-checkin';
+      row.progressPercent = Math.max(row.progressPercent ?? 0, 90);
+    }
     return;
   }
   await http(`/api/applications/${application.backendId}/confirm`, { method: 'POST' });
+}
+
+export async function verifyCheckinQr(application: Application, code: string): Promise<void> {
+  if (!live()) {
+    await delay();
+    const assignedRoom = application.assignedBed?.replace(/-B\d+$/, '');
+    const normalized = code.trim().toUpperCase();
+    const expected = assignedRoom ? `ROOM-${assignedRoom.replaceAll('-', '')}` : '';
+    if (assignedRoom && ![expected, `ROOM-${assignedRoom}`, assignedRoom].includes(normalized)) {
+      throw new Error('Mã QR không khớp phòng được phân.');
+    }
+    const row = mockState.applications.find((item) => item.id === application.id);
+    if (row) {
+      row.qrVerified = true;
+      row.qrVerifiedAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      row.progressPercent = Math.max(row.progressPercent ?? 0, 95);
+    }
+    pushMockAudit('application.check_in_qr', application.id, code);
+    return;
+  }
+  await http(`/api/applications/${application.backendId}/check-in-qr`, {
+    method: 'POST',
+    body: { code },
+  });
 }
 
 export async function checkInApplication(application: Application, note: string): Promise<void> {
@@ -937,6 +966,7 @@ export async function updateBuilding(
 }
 
 export async function fetchCurrentRoom(): Promise<{
+  roomId?: string;
   roomCode: string | null;
   bedCode: string | null;
   roommates: { name: string; bed: string; cohort?: string }[];
@@ -945,6 +975,7 @@ export async function fetchCurrentRoom(): Promise<{
     await delay();
     const myRoom = mockState.rooms.find((room) => room.id === currentStudent.room);
     return {
+      roomId: currentStudent.room,
       roomCode: currentStudent.room,
       bedCode: currentStudent.bed,
       roommates:
@@ -954,7 +985,9 @@ export async function fetchCurrentRoom(): Promise<{
     };
   }
   const [current, roommates] = await Promise.all([
-    http<{ room_code: string; bed_code: string } | null>('/api/student-rooms/current'),
+    http<{ room_id?: string; room_code: string; bed_code: string } | null>(
+      '/api/student-rooms/current',
+    ),
     http<{ full_name: string; bed_code: string; cohort?: string }[]>(
       '/api/student-rooms/roommates',
     ).catch(() => []),
@@ -966,12 +999,19 @@ export async function fetchCurrentRoom(): Promise<{
     const assignedBed = checkedIn?.assignedBed;
     const roomCode = assignedBed?.replace(/-B\d+$/, '') ?? null;
     return {
+      roomId: undefined,
       roomCode,
       bedCode: assignedBed ?? null,
       roommates: [],
     };
   }
+  const roomId =
+    current.room_id ??
+    (current.room_code
+      ? (await fetchRooms()).find((room) => room.id === current.room_code)?.backendId
+      : undefined);
   return {
+    roomId,
     roomCode: current.room_code,
     bedCode: current.bed_code,
     roommates: roommates
@@ -1065,6 +1105,10 @@ export async function createTicket(input: {
   title: string;
   description: string;
   priority: string;
+  roomId?: string;
+  assetId?: string;
+  assetName?: string;
+  category?: string;
 }): Promise<Ticket> {
   if (!live()) {
     await delay();
@@ -1072,6 +1116,7 @@ export async function createTicket(input: {
       id: `MT-2026-${String(Math.floor(Math.random() * 900) + 100)}`,
       title: input.title,
       room: currentStudent.room,
+      asset: input.assetName,
       reporter: currentStudent.name,
       priority: input.priority as Ticket['priority'],
       status: 'new',
@@ -1095,7 +1140,9 @@ export async function createTicket(input: {
       title: input.title,
       description: input.description,
       priority: input.priority,
-      category: 'other',
+      room_id: input.roomId,
+      asset_id: input.assetId,
+      category: input.category ?? 'other',
     },
   });
   return mapTicket(dto);
@@ -1853,6 +1900,49 @@ export async function fetchRoomAssets(room: Room): Promise<RoomAsset[]> {
       status: RoomAsset['status'];
     }[]
   >(`/api/rooms/${room.backendId}/assets`);
+  return rows.map((row) => ({
+    backendId: row.id,
+    assetCode: row.asset_code,
+    name: row.name,
+    category: row.category,
+    status: row.status,
+  }));
+}
+
+export async function fetchRoomAssetsByRoomId(roomId?: string | null): Promise<RoomAsset[]> {
+  if (!roomId) return [];
+  if (!live()) {
+    await delay(100);
+    return [
+      {
+        assetCode: `${currentStudent.room}-FAN-01`,
+        name: 'Quạt trần',
+        category: 'electric',
+        status: 'ok',
+      },
+      {
+        assetCode: `${currentStudent.room}-DESK-01`,
+        name: 'Bàn học',
+        category: 'furniture',
+        status: 'ok',
+      },
+      {
+        assetCode: `${currentStudent.room}-LOCK-01`,
+        name: 'Khóa cửa',
+        category: 'security',
+        status: 'ok',
+      },
+    ];
+  }
+  const rows = await http<
+    {
+      id: string;
+      asset_code: string;
+      name: string;
+      category: string;
+      status: RoomAsset['status'];
+    }[]
+  >(`/api/rooms/${roomId}/assets`);
   return rows.map((row) => ({
     backendId: row.id,
     assetCode: row.asset_code,

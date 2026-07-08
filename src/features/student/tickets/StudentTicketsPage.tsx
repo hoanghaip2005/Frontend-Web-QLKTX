@@ -39,6 +39,7 @@ import {
   confirmTicket,
   createTicket,
   fetchCurrentRoom,
+  fetchRoomAssetsByRoomId,
   fetchTickets,
 } from '@/lib/api/repositories';
 import { formatTimelineEvent } from '@/lib/formatters/status';
@@ -48,15 +49,26 @@ import type { Ticket } from '@/mocks/data/dormData';
 export function StudentTicketsPage() {
   const { data: rows, loading, error, reload } = useAsyncData(fetchTickets);
   const { data: currentRoom } = useAsyncData(fetchCurrentRoom);
+  const { data: roomAssets, loading: assetsLoading } = useAsyncData(
+    () => fetchRoomAssetsByRoomId(currentRoom?.roomId),
+    [currentRoom?.roomId],
+  );
   const [creating, setCreating] = useState(false);
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('normal');
+  const [selectedAssetKey, setSelectedAssetKey] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [reopenTarget, setReopenTarget] = useState<Ticket | null>(null);
   const [reopenReason, setReopenReason] = useState('');
   const [saving, setSaving] = useState(false);
 
   const myTickets = rows ?? [];
+  const assetOptions = roomAssets ?? [];
+  const selectedAsset =
+    selectedAssetKey === 'other'
+      ? null
+      : (assetOptions.find((asset) => (asset.backendId ?? asset.assetCode) === selectedAssetKey) ??
+        null);
 
   const run = async (action: () => Promise<void>, onError: (message: string) => void) => {
     setSaving(true);
@@ -71,6 +83,14 @@ export function StudentTicketsPage() {
   };
 
   const submitTicket = () => {
+    if (!currentRoom?.roomCode) {
+      setFormError('Bạn cần có phòng hiện tại trước khi báo sửa chữa.');
+      return;
+    }
+    if (!selectedAssetKey) {
+      setFormError('Vui lòng chọn tài sản hoặc khu vực cần sửa.');
+      return;
+    }
     if (!description.trim()) {
       setFormError('Vui lòng mô tả sự cố trước khi gửi.');
       return;
@@ -81,8 +101,14 @@ export function StudentTicketsPage() {
         title: description.slice(0, 60),
         description,
         priority,
+        roomId: currentRoom.roomId,
+        assetId: selectedAsset?.backendId,
+        assetName:
+          selectedAsset?.name ?? (selectedAssetKey === 'other' ? 'Khu vực khác' : undefined),
+        category: selectedAsset?.category ?? 'other',
       });
       setDescription('');
+      setSelectedAssetKey('');
       setCreating(false);
     }, setFormError);
   };
@@ -135,6 +161,37 @@ export function StudentTicketsPage() {
                 Phòng / vị trí
                 <Input value={currentRoom?.roomCode ?? 'Chưa nhận phòng'} readOnly />
               </label>
+              <div className="grid gap-2 text-sm font-medium text-slate-700">
+                Tài sản / khu vực cần sửa *
+                <Select
+                  value={selectedAssetKey}
+                  disabled={!currentRoom?.roomId || assetsLoading}
+                  onValueChange={setSelectedAssetKey}
+                >
+                  <SelectTrigger aria-label="Tài sản hoặc khu vực cần sửa">
+                    <SelectValue
+                      placeholder={
+                        !currentRoom?.roomId
+                          ? 'Chưa có phòng hiện tại'
+                          : assetsLoading
+                            ? 'Đang tải tài sản...'
+                            : 'Chọn tài sản'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assetOptions.map((asset) => (
+                      <SelectItem
+                        key={asset.backendId ?? asset.assetCode}
+                        value={asset.backendId ?? asset.assetCode}
+                      >
+                        {asset.name} - {asset.assetCode}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="other">Khu vực khác trong phòng</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid gap-2 text-sm font-medium text-slate-700">
                 Mức độ khẩn cấp
                 <Select value={priority} onValueChange={setPriority}>

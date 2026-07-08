@@ -1,12 +1,29 @@
-import { useState } from 'react';
-import { CheckCircle2, CircleDashed, FileUp, ShieldCheck, XCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Camera,
+  CheckCircle2,
+  CircleDashed,
+  FileUp,
+  QrCode,
+  ShieldCheck,
+  XCircle,
+} from 'lucide-react';
 
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Progress } from '@/components/ui/progress';
@@ -25,11 +42,23 @@ import {
   fetchApplications,
   fetchBuildings,
   fetchProfile,
+  verifyCheckinQr,
 } from '@/lib/api/repositories';
 import { useAsyncData } from '@/lib/hooks/useAsyncData';
 import type { Application, ApplicationStatus } from '@/mocks/data/dormData';
 
 type Step = 'consent' | 'form';
+
+type BarcodeDetectorResult = { rawValue?: string };
+type BarcodeDetectorConstructor = new (options?: { formats?: string[] }) => {
+  detect(source: CanvasImageSource): Promise<BarcodeDetectorResult[]>;
+};
+
+declare global {
+  interface Window {
+    BarcodeDetector?: BarcodeDetectorConstructor;
+  }
+}
 
 // Progress milestones per status for the timeline view.
 const statusRank: Partial<Record<ApplicationStatus, number>> = {
@@ -80,10 +109,19 @@ function ApplicationStatusView({
   onReload: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [verifyingQr, setVerifyingQr] = useState(false);
+  const [qrCode, setQrCode] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanningRef = useRef(false);
   const rank = statusRank[application.status] ?? 0;
   const failed = application.status === 'rejected' || application.status === 'needs-update';
   const progress = application.progressPercent ?? statusProgress[application.status] ?? 0;
+  const assignedRoomCode = application.assignedBed?.replace(/-B\d+$/, '');
+  const demoQrCode = assignedRoomCode ? `ROOM-${assignedRoomCode.replaceAll('-', '')}` : '';
   const reviewChecks =
     application.reviewChecks && application.reviewChecks.length > 0
       ? application.reviewChecks
@@ -115,6 +153,81 @@ function ApplicationStatusView({
       setActionError(error instanceof Error ? error.message : 'Không xác nhận được');
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const stopCamera = () => {
+    scanningRef.current = false;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      scanningRef.current = false;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  const verifyQr = async (rawCode = qrCode) => {
+    const code = rawCode.trim();
+    if (!code) {
+      setActionError('Vui lòng nhập hoặc quét mã QR phòng.');
+      return;
+    }
+    setVerifyingQr(true);
+    setActionError(null);
+    try {
+      await verifyCheckinQr(application, code);
+      setQrCode(code);
+      onReload();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Không xác thực được QR nhận phòng');
+    } finally {
+      setVerifyingQr(false);
+    }
+  };
+
+  const startScanner = async () => {
+    setScannerOpen(true);
+    setCameraError(null);
+    setActionError(null);
+    if (!window.BarcodeDetector) {
+      setCameraError('Trình duyệt chưa hỗ trợ quét QR trực tiếp. Nhập mã QR bên dưới để demo.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      scanningRef.current = true;
+      const scan = async () => {
+        if (!scanningRef.current) return;
+        const video = videoRef.current;
+        if (video && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          try {
+            const [result] = await detector.detect(video);
+            if (result?.rawValue) {
+              stopCamera();
+              setScannerOpen(false);
+              await verifyQr(result.rawValue);
+              return;
+            }
+          } catch {
+            // Some frames are undecodable; keep scanning.
+          }
+        }
+        window.requestAnimationFrame(scan);
+      };
+      window.requestAnimationFrame(scan);
+    } catch {
+      setCameraError('Không mở được camera. Kiểm tra quyền trình duyệt hoặc nhập mã QR thủ công.');
     }
   };
 
@@ -226,7 +339,47 @@ function ApplicationStatusView({
           )}
           {application.status === 'approved' && <p>Hồ sơ đã duyệt. Chờ ban quản lý phân giường.</p>}
           {application.status === 'waiting-checkin' && (
-            <p>Đã giữ chỗ. Đến văn phòng KTX để check-in nhận phòng.</p>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-slate-900">Quét QR tại phòng được phân</p>
+                <Badge variant={application.qrVerified ? 'default' : 'secondary'}>
+                  {application.qrVerified ? 'Đã quét QR' : 'Chưa quét QR'}
+                </Badge>
+              </div>
+              <p>
+                Quét mã QR dán ở cửa phòng để xác nhận bạn đã đến đúng phòng. Nhân viên vẫn là người
+                hoàn tất bàn giao/check-in cuối.
+              </p>
+              {application.qrVerified && (
+                <p className="rounded-app bg-emerald-50 px-3 py-2 text-emerald-800">
+                  QR đã xác thực{application.qrVerifiedAt ? ` lúc ${application.qrVerifiedAt}` : ''}
+                  . Chờ nhân viên đối chiếu CCCD và bàn giao tài sản.
+                </p>
+              )}
+              <div className="grid gap-2">
+                <Input
+                  value={qrCode}
+                  placeholder={demoQrCode || 'Ví dụ: ROOM-A302'}
+                  onChange={(event) => setQrCode(event.target.value)}
+                  aria-label="Mã QR nhận phòng"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="secondary" onClick={() => void startScanner()}>
+                    <Camera className="h-4 w-4" aria-hidden="true" />
+                    Quét bằng camera
+                  </Button>
+                  <Button type="button" disabled={verifyingQr} onClick={() => void verifyQr()}>
+                    <QrCode className="h-4 w-4" aria-hidden="true" />
+                    {verifyingQr ? 'Đang xác thực...' : 'Xác thực QR'}
+                  </Button>
+                  {demoQrCode && (
+                    <Button type="button" variant="ghost" onClick={() => setQrCode(demoQrCode)}>
+                      Dùng mã demo {demoQrCode}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
           {application.status === 'checked-in' && (
             <p>
@@ -236,6 +389,51 @@ function ApplicationStatusView({
           {failed && <p>Bạn có thể chỉnh sửa và nộp lại hồ sơ sau khi bổ sung.</p>}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={scannerOpen}
+        onOpenChange={(open) => {
+          setScannerOpen(open);
+          if (!open) stopCamera();
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Quét QR nhận phòng</DialogTitle>
+            <DialogDescription>
+              Đưa camera vào mã QR dán tại cửa phòng hoặc nhập mã thủ công nếu trình duyệt không hỗ
+              trợ.
+            </DialogDescription>
+          </DialogHeader>
+          {cameraError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Không thể quét bằng camera</AlertTitle>
+              <AlertDescription>{cameraError}</AlertDescription>
+            </Alert>
+          ) : (
+            <div className="overflow-hidden rounded-app border border-slate-200 bg-slate-950">
+              <video
+                ref={videoRef}
+                className="aspect-video w-full object-cover"
+                muted
+                playsInline
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                stopCamera();
+                setScannerOpen(false);
+              }}
+            >
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -68,6 +68,8 @@ export type Application = {
   reviewChecks?: ApplicationReviewCheck[];
   progressPercent?: number;
   reviewedAt?: string;
+  qrVerified?: boolean;
+  qrVerifiedAt?: string;
   status: ApplicationStatus;
   submittedAt: string;
   note?: string;
